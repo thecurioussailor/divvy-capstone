@@ -15,7 +15,7 @@ declare_id!("HKbBGFwWNVYLa7MnyKVZoZNrVy9BthdizHXfKZNwGmZm");
 pub mod divvy {
     use super::*;
 
-    pub fn initialize(ctx: Context<Initialize>) -> Result<()> {
-        initialize::handler(ctx)
+    pub fn initialize_split(ctx: Context<InitializeSplit>, split_id: u64) -> Result<()> {
+        ctx.accounts.initialize(split_id, &ctx.bumps)
     }
 }
