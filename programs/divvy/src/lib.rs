@@ -18,4 +18,16 @@ pub mod divvy {
     pub fn initialize_split(ctx: Context<InitializeSplit>, split_id: u64) -> Result<()> {
         ctx.accounts.initialize(split_id, &ctx.bumps)
     }
+
+    pub fn add_member(
+        ctx: Context<AddMember>,
+        member: Pubkey,
+        share_bps: u16,
+    ) -> Result<()> {
+        ctx.accounts.add_member(
+            member, 
+            share_bps, 
+            &ctx.bumps
+        )
+    }
 }
