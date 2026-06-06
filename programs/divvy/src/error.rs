@@ -52,5 +52,11 @@ pub enum DivvyError {
 
    #[msg("Cannot close split. Members still have unclaimed balances.")]
    BalanceNotZero,
+
+   #[msg("Deposit amount must be greater than zero.")]
+    InvalidAmount,
+
+    #[msg("Math overflow occurred.")]
+    MathOverflow,
     
 }

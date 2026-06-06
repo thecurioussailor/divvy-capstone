@@ -15,6 +15,16 @@ declare_id!("HKbBGFwWNVYLa7MnyKVZoZNrVy9BthdizHXfKZNwGmZm");
 pub mod divvy {
     use super::*;
 
+    // Protocol
+    pub fn initialize_protocol(ctx: Context<InitializeProtocol>, fee_bps: u16) -> Result<()> {
+        ctx.accounts.initialize_protocol(fee_bps, &ctx.bumps)
+    }
+    
+    pub fn withdraw_fees(ctx: Context<WithdrawFees>) -> Result<()> {
+        ctx.accounts.withdraw_fees(&ctx.bumps)
+    }
+
+    //Users
     pub fn initialize_split(ctx: Context<InitializeSplit>, split_id: u64) -> Result<()> {
         ctx.accounts.initialize(split_id, &ctx.bumps)
     }
@@ -30,4 +40,6 @@ pub mod divvy {
             &ctx.bumps
         )
     }
+
+    pub fn deposit(ctx: Context<Deposit>)
 }
