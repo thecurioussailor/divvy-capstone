@@ -13,6 +13,7 @@ pub struct SplitConfig {
     pub token_mint: Pubkey,      // 32
     /// Cumulative total deposited into the vault (ever)
     pub total_deposited: u64,    // 8   
+    pub total_allocated_bps: u16, // 2  // tracks running sum of all member share_bps
     /// Unique identifier for this split (allows one authority to have multiple splits)
     pub split_id: u64,           // 8
     /// PDA bump
@@ -21,7 +22,7 @@ pub struct SplitConfig {
     pub vault_bump: u8,          // 1
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, PartialEq, Eq)]
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, PartialEq, Eq, InitSpace)]
 pub enum SplitStatus {
     Draft,
     Active,
@@ -45,4 +46,15 @@ pub struct MemberAllocation {
      pub last_snapshot: u64,      // 8
      /// PDA bump
      pub bump: u8,            
+}
+
+#[account]
+#[derive(InitSpace)]
+pub struct ProtocolConfig {
+     /// The wallet that can collect all protocol fees
+     pub protocol_authority: Pubkey,  // 32
+     /// Fee charged on every deposit in basis points (e.g. 50 = 0.5%)
+     pub fee_bps: u16,                // 2
+     /// PDA bump
+     pub bump: u8,                    // 1
 }
