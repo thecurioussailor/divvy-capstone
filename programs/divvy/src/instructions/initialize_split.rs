@@ -59,6 +59,7 @@ impl<'info> InitializeSplit<'info> {
             member_count:    0,
             token_mint:      self.token_mint.key(),
             total_deposited: 0,
+            total_allocated_bps: 0,
             split_id,
             bump:            bumps.split_config,
             vault_bump:      bumps.vault,
