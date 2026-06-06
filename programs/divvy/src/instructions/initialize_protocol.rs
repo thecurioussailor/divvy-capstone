@@ -10,6 +10,8 @@
 
 use anchor_lang::prelude::*;
 use crate::state::ProtocolConfig;
+use crate::error::DivvyError;
+const PROTOCOL_AUTHORITY: &str = "YourActualWalletAddressHere111111111111111";
 
 #[derive(Accounts)]
 pub struct InitializeProtocol<'info> {
@@ -36,6 +38,13 @@ impl<'info> InitializeProtocol<'info> {
         fee_bps: u16,
         bumps: &InitializeProtocolBumps,
     ) -> Result<()> {
+
+        // Only your wallet can initialize the protocol
+        require!(
+            self.protocol_authority.key().to_string() == PROTOCOL_AUTHORITY,
+            DivvyError::Unauthorized
+        );
+
         self.protocol_config.set_inner(ProtocolConfig {
             protocol_authority: self.protocol_authority.key(),
             fee_bps,
