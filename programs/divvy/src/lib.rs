@@ -55,4 +55,8 @@ pub mod divvy {
     pub fn claim(ctx: Context<Claim>) -> Result<()> {
         ctx.accounts.claim()
     }
+
+    pub fn remove_member(ctx: Context<RemoveMember>) -> Result<()> {
+        ctx.accounts.remove_member()
+    }
 }
