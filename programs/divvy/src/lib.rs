@@ -41,5 +41,18 @@ pub mod divvy {
         )
     }
 
-    pub fn deposit(ctx: Context<Deposit>)
+    pub fn update_allocation(
+        ctx: Context<UpdateAllocation>,
+        new_share_bps: u16,
+    ) -> Result<()> {
+        ctx.accounts.update_allocation(new_share_bps)
+    }
+
+    pub fn deposit(ctx: Context<Deposit>, amount: u64) -> Result<()> {
+        ctx.accounts.deposit(amount, &ctx.bumps)
+    }
+
+    pub fn claim(ctx: Context<Claim>) -> Result<()> {
+        ctx.accounts.claim()
+    }
 }
