@@ -31,13 +31,6 @@ pub mod divvy {
         )
     }
 
-    pub fn update_allocation(
-        ctx: Context<UpdateAllocation>,
-        new_share_bps: u16,
-    ) -> Result<()> {
-        ctx.accounts.update_allocation(new_share_bps)
-    }
-
     pub fn deposit(ctx: Context<Deposit>, amount: u64) -> Result<()> {
         ctx.accounts.deposit(amount, &ctx.bumps)
     }
@@ -46,7 +39,4 @@ pub mod divvy {
         ctx.accounts.claim()
     }
 
-    pub fn remove_member(ctx: Context<RemoveMember>) -> Result<()> {
-        ctx.accounts.remove_member()
-    }
 }
