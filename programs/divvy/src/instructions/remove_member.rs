@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 use crate::state::{SplitConfig, MemberAllocation, SplitStatus};
-use crate::errors::DivvyError;
+use crate::error::DivvyError;
 
 #[derive(Accounts)]
 pub struct RemoveMember<'info> {

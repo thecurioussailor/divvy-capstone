@@ -2,61 +2,48 @@ use anchor_lang::prelude::*;
 
 #[error_code]
 pub enum DivvyError {
-   // --- Authorization Errors ---
-   #[msg("You are not the authority of this split.")]
-   Unauthorized,
+    #[msg("Allocations must sum to exactly 10000 basis points")]
+    InvalidAllocationSum,
 
-   #[msg("Only the designated member can claim their share.")]
-   NotMember,
+    #[msg("The split must have at least one member")]
+    NoMembers,
 
-   // --- Split Status Errors ---
-   #[msg("This split is paused. Deposits and claims are disabled.")]
-   SplitPaused,
+    #[msg("Too many members for this split")]
+    TooManyMembers,
 
-   #[msg("This split is closed.")]
-   SplitClosed,
+    #[msg("The split is not active")]
+    SplitNotActive,
 
-   #[msg("This split is not active yet.")]
-   SplitNotActive,
+    #[msg("The split is paused")]
+    SplitPaused,
 
-   #[msg("Split is already in the requested state.")]
-   AlreadyInState,
+    #[msg("The split is closed")]
+    SplitClosed,
 
-   // --- Member Errors ---
-   #[msg("Member already exists in this split.")]
-   MemberAlreadyExists,
+    #[msg("The split must be in draft for this action")]
+    SplitNotDraft,
 
-   #[msg("Cannot remove member with unclaimed balance.")]
-   UnclaimedBalanceExists,
+    #[msg("The split is not paused")]
+    SplitNotPaused,
 
-   #[msg("Maximum member count reached.")]
-   MaxMembersReached,
-
-   // --- Claim Errors ---
-   #[msg("Nothing to claim. Your pending balance is zero.")]
-   NothingToClaim,
-
-   // --- Allocation Errors ---
-   #[msg("Total allocations must equal exactly 10,000 basis points (100%).")]
-   InvalidTotalAllocation,
-
-   #[msg("Share basis points cannot be zero.")]
-   ZeroShareBps,
-
-   #[msg("Share basis points cannot exceed 10,000.")]
-   ShareBpsOverflow,
-
-   // --- Close Errors ---
-   #[msg("Cannot close split. Vault still holds tokens.")]
-   VaultNotEmpty,
-
-   #[msg("Cannot close split. Members still have unclaimed balances.")]
-   BalanceNotZero,
-
-   #[msg("Deposit amount must be greater than zero.")]
-    InvalidAmount,
-
-    #[msg("Math overflow occurred.")]
+    #[msg("Only the authority may perform this action")]
+    Unauthorized,
+    
+    #[msg("Nothing is available to claim")]
+    NothingToClaim,
+    
+    #[msg("Arithmetic overflow")]
     MathOverflow,
     
+    #[msg("The vault must be empty before closing")]
+    VaultNotEmpty,
+    
+    #[msg("Share must be greater than zero")]
+    ZeroShare,
+    
+    #[msg("Amount must be greater than zero")]
+    ZeroAmount,
+    
+    #[msg("Token account mint does not match the split")]
+    WrongMint,
 }
