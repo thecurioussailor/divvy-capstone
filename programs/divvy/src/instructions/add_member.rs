@@ -49,23 +49,26 @@ impl<'info> AddMember<'info> {
         
         require!(self.split_config.status == SplitStatus::Draft, DivvyError::SplitNotDraft);
         require!(share_bps > 0, DivvyError::ZeroShare);
-
-        let split_key = self.split_config.key();
       
         // Check adding this member won't exceed 10_000 bps
-        let new_total = self.split_config.total_bps
-        .checked_add(share_bps)
-        .ok_or(DivvyError::MathOverflow)?;
+        let new_total = self
+            .split_config
+            .total_bps
+            .checked_add(share_bps)
+            .ok_or(DivvyError::MathOverflow)?;
 
         require!(new_total <= TOTAL_BPS, DivvyError::InvalidAllocationSum);
 
-        let new_count = self.split_config
-        .member_count
-        .checked_add(1)
-        .ok_or(DivvyError::TooManyMembers)?;
+        let new_count = self
+            .split_config
+            .member_count
+            .checked_add(1)
+            .ok_or(DivvyError::TooManyMembers)?;
         
         require!(new_count <= MAX_MEMBERS, DivvyError::TooManyMembers);
 
+        let split_key = self.split_config.key();
+        
          // Set member allocation
          self.member_allocation.set_inner(MemberAllocation {
             split: split_key,
