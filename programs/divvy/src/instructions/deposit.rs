@@ -1,21 +1,21 @@
 use anchor_lang::prelude::*;
-use anchor_spl::token::{self, Mint, Token, TokenAccount, Transfer};
-use crate::state::{SplitConfig, SplitStatus};
-use crate::error::DivvyError;
+use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface, TransferChecked, transfer_checked};
 
-// Fee in basis points charged on every deposit (e.g. 50 = 0.5%)
-pub const DEPOSIT_FEE_BPS: u64 = 50;
+use crate::state::*;
+use crate::error::DivvyError;
+use crate::events::DepositEvent;
+use crate::constants::*;
 
 #[derive(Accounts)]
 pub struct Deposit<'info> {
-    /// Anyone can deposit — no authority check needed
+
     #[account(mut)]
     pub depositor: Signer<'info>,
 
     #[account(
         mut,
         seeds = [
-            b"split",
+            SPLIT_SEED,
             split_config.authority.as_ref(),
             split_config.split_id.to_le_bytes().as_ref(),
         ],
@@ -23,90 +23,62 @@ pub struct Deposit<'info> {
     )]
     pub split_config: Account<'info, SplitConfig>,
 
-    /// Vault that holds the revenue tokens
+    #[account(address = split_config.token_mint @ DivvyError::WrongMint)]
+    pub token_mint: InterfaceAccount<'info, Mint>,
+
     #[account(
         mut,
-        seeds = [b"vault", split_config.key().as_ref()],
+        seeds = [VAULT_SEED, split_config.key().as_ref()],
         bump = split_config.vault_bump,
     )]
-    pub vault: Account<'info, TokenAccount>,
+    pub vault: InterfaceAccount<'info, TokenAccount>,
 
-    /// Fee vault that holds protocol fees
     #[account(
         mut,
-        seeds = [b"fee_vault", split_config.key().as_ref()],
-        bump,
+        constraint = depositor_token_account.mint == split_config.token_mint @ DivvyError::WrongMint,
+        constraint = depositor_token_account.owner == depositor.key() @DivvyError::Unauthorized,
     )]
-    pub fee_vault: Account<'info, TokenAccount>,
+    pub depositor_token_account: InterfaceAccount<'info, TokenAccount>,
 
-    /// Depositor's token account (source of funds)
-    #[account(
-        mut,
-        constraint = depositor_token_account.mint == split_config.token_mint,
-        constraint = depositor_token_account.owner == depositor.key(),
-    )]
-    pub depositor_token_account: Account<'info, TokenAccount>,
-
-    pub token_mint: Account<'info, Mint>,
-    pub token_program: Program<'info, Token>,
-    pub system_program: Program<'info, System>,
+    pub token_program: Interface<'info, TokenInterface>,
 }
 
 impl<'info> Deposit<'info> {
-    pub fn deposit(&mut self, amount: u64, bumps: &DepositBumps) -> Result<()> {
-        // 1. Split must be active
-        require!(
-            self.split_config.status == SplitStatus::Active,
-            DivvyError::SplitPaused
-        );
+    pub fn deposit(&mut self, amount: u64) -> Result<()> {
+        require!(amount > 0, DivvyError::ZeroAmount);
+        self.split_config.require_active()?;
 
-        // 2. All allocations must sum to 10,000 bps before any deposit
-        require!(
-            self.split_config.total_allocated_bps == 10_000,
-            DivvyError::InvalidTotalAllocation
-        );
+        let transfer_to_vault_accounts = TransferChecked {
+            from: self.depositor_token_account.to_account_info(),
+            mint: self.token_mint.to_account_info(),
+            to: self.vault.to_account_info(),
+            authority: self.depositor.to_account_info()
+        };
 
-        // 3. Amount must be greater than zero
-        require!(amount > 0, DivvyError::InvalidAmount);
-
-        // 4. Calculate fee and net amount
-        let fee = amount
-            .checked_mul(DEPOSIT_FEE_BPS)
-            .ok_or(DivvyError::MathOverflow)?
-            .checked_div(10_000)
-            .ok_or(DivvyError::MathOverflow)?;
-
-        let net_amount = amount
-            .checked_sub(fee)
-            .ok_or(DivvyError::MathOverflow)?;
-
-        // 5. Transfer net amount from depositor → vault
         let transfer_to_vault_ctx = CpiContext::new(
             self.token_program.key(),
-            Transfer {
-                from:      self.depositor_token_account.to_account_info(),
-                to:        self.vault.to_account_info(),
-                authority: self.depositor.to_account_info(),
-            },
+            transfer_to_vault_accounts,
         );
-        token::transfer(transfer_to_vault_ctx, net_amount)?;
 
-        // 6. Transfer fee from depositor → fee vault
-        let transfer_fee_ctx = CpiContext::new(
-            self.token_program.key(),
-            Transfer {
-                from:      self.depositor_token_account.to_account_info(),
-                to:        self.fee_vault.to_account_info(),
-                authority: self.depositor.to_account_info(),
-            },
-        );
-        token::transfer(transfer_fee_ctx, fee)?;
+        transfer_checked(
+            transfer_to_vault_ctx, 
+            amount, 
+            self.token_mint.decimals
+        )?;
 
         // 7. Update total_deposited with net amount only
-        self.split_config.total_deposited = self.split_config
+        self.split_config.total_deposited = self
+            .split_config
             .total_deposited
-            .checked_add(net_amount)
+            .checked_add(amount)
             .ok_or(DivvyError::MathOverflow)?;
+
+        emit!(DepositEvent {
+            split: self.split_config.key(),
+            payer: self.depositor.key(),
+            amount,
+            total_deposited: self.split_config.total_deposited,
+        });
 
         Ok(())
     }

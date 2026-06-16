@@ -2,12 +2,14 @@ pub mod constants;
 pub mod error;
 pub mod instructions;
 pub mod state;
+pub mod events;
 
 use anchor_lang::prelude::*;
 
 pub use constants::*;
 pub use instructions::*;
 pub use state::*;
+
 
 declare_id!("HKbBGFwWNVYLa7MnyKVZoZNrVy9BthdizHXfKZNwGmZm");
 
@@ -32,7 +34,7 @@ pub mod divvy {
     }
 
     pub fn deposit(ctx: Context<Deposit>, amount: u64) -> Result<()> {
-        ctx.accounts.deposit(amount, &ctx.bumps)
+        ctx.accounts.deposit(amount)
     }
 
     pub fn claim(ctx: Context<Claim>) -> Result<()> {
