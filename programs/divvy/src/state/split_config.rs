@@ -50,4 +50,13 @@ impl SplitConfig {
             SplitStatus::Closed => err!(DivvyError::SplitClosed)
         }
     }
+
+    /// Guards claims: allowed while Active or Paused (members withdraw during wind-down).
+    pub fn require_claimable(&self) -> Result<()> {
+        match self.status {
+            SplitStatus::Active | SplitStatus::Paused => Ok(()),
+            SplitStatus::Draft => err!(DivvyError::SplitNotActive),
+            SplitStatus::Closed => err!(DivvyError::SplitClosed),
+        }
+    }
 }

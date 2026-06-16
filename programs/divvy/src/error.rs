@@ -46,4 +46,16 @@ pub enum DivvyError {
     
     #[msg("Token account mint does not match the split")]
     WrongMint,
+
+    #[msg("Mints with a transfer-fee extension are not supported")]
+    TransferFeeNotSupported,
+    
+    #[msg("Member still has unclaimed funds")]
+    MemberHasUnclaimedFunds,
+    
+    #[msg("All members must be closed before closing the split")]
+    MembersRemaining,
+    
+    #[msg("Cannot resume a split whose teardown has started")]
+    TeardownInProgress,
 }

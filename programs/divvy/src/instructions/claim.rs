@@ -56,22 +56,12 @@ pub struct Claim<'info> {
 
 impl<'info> Claim<'info> {
     pub fn claim(&mut self) -> Result<()> {
-        self.split_config.require_active()?;
+        self.split_config.require_claimable()?;
         
-        // claimable = floor(total_deposited * share_bps / 10000) - total_claimed
-        let total = self.split_config.total_deposited as u128;
-        let bps = self.member_allocation.share_bps as u128;
-
-        let entitled = total
-            .checked_mul(bps)
-            .ok_or(DivvyError::MathOverflow)?
-            .checked_div(TOTAL_BPS as u128)
-            .ok_or(DivvyError::MathOverflow)? as u64;
-
-        let claimable = entitled
-            .checked_sub(self.member_allocation.total_claimed)
-            .ok_or(DivvyError::MathOverflow)?;
-
+        let claimable = self
+            .member_allocation
+            .claimable(self.split_config.total_deposited)?;
+        
         require!(claimable > 0, DivvyError::NothingToClaim);
 
         // The vault's authority is the split_config PDA; sign with its seeds.
