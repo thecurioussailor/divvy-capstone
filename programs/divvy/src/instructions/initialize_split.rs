@@ -41,7 +41,7 @@ pub struct InitializeSplit<'info> {
 }
 
 impl<'info> InitializeSplit<'info> {
-    pub fn initialize(&mut self, split_id: u64, bumps: &InitializeSplitBumps) -> Result<()> {
+    pub fn initialize_split(&mut self, split_id: u64, bumps: &InitializeSplitBumps) -> Result<()> {
         self.split_config.set_inner(SplitConfig {
             authority:       self.authority.key(),
             token_mint:      self.token_mint.key(),
