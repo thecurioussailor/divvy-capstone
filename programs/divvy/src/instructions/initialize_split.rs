@@ -1,5 +1,5 @@
 use anchor_lang::prelude::*;
-use anchor_spl::token::{Mint, Token, TokenAccount};
+use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
 
 use crate::state::{SplitConfig, SplitStatus};
 use crate::constants::*;
@@ -11,7 +11,7 @@ pub struct InitializeSplit<'info> {
     #[account(mut)]
     pub authority: Signer<'info>,
 
-    pub token_mint: Account<'info, Mint>,
+    pub token_mint: InterfaceAccount<'info, Mint>,
 
     #[account(
         init,
@@ -33,10 +33,11 @@ pub struct InitializeSplit<'info> {
         bump,
         token::mint = token_mint,
         token::authority = split_config,
+        token::token_program = token_program,
     )]
-    pub vault: Account<'info, TokenAccount>,
+    pub vault: InterfaceAccount<'info, TokenAccount>,
 
-    pub token_program: Program<'info, Token>,
+    pub token_program: Interface<'info, TokenInterface>,
     pub system_program: Program<'info, System>,
 }
 
