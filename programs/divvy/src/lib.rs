@@ -3,6 +3,7 @@ pub mod error;
 pub mod instructions;
 pub mod state;
 pub mod events;
+pub mod utils;
 
 use anchor_lang::prelude::*;
 
@@ -58,6 +59,14 @@ pub mod divvy {
         ctx.accounts.resume()
     }
 
-    
+    /// Close a fully-claimed member's account during wind-down (Paused). Authority only.
+    pub fn close_member(ctx: Context<CloseMember>, member: Pubkey) -> Result<()> {
+        ctx.accounts.close_member(member)
+    }
+
+    /// Close the split: requires Paused and all members closed. Sweeps dust, reclaims rent.
+    pub fn close_split(ctx: Context<CloseSplit>) -> Result<()> {
+        ctx.accounts.close_split()
+    }
 
 }
