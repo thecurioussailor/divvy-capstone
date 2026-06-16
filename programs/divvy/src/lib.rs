@@ -33,6 +33,10 @@ pub mod divvy {
         )
     }
 
+    pub fn activate_split(ctx: Context<ActivateSplit>) -> Result<()> {
+        ctx.accounts.activate_split()
+    }
+
     pub fn deposit(ctx: Context<Deposit>, amount: u64) -> Result<()> {
         ctx.accounts.deposit(amount)
     }
@@ -41,4 +45,5 @@ pub mod divvy {
         ctx.accounts.claim()
     }
 
+    
 }
