@@ -12,7 +12,7 @@ pub struct ActivateSplit<'info> {
     #[account(
         mut,
         has_one = authority @ DivvyError::Unauthorized,
-        seeds = [SPLIT_SEED, split_config.authority.as_ref(), &split_config.split_id.to_le_bytes()],
+        seeds = [SPLIT_SEED, split_config.authority.as_ref(), split_config.split_id.to_le_bytes().as_ref()],
         bump = split_config.bump,
     )]
     pub split_config: Account<'info, SplitConfig>
