@@ -17,7 +17,10 @@ declare_id!("HKbBGFwWNVYLa7MnyKVZoZNrVy9BthdizHXfKZNwGmZm");
 pub mod divvy {
     use super::*;
 
-    pub fn initialize_split(ctx: Context<InitializeSplit>, split_id: u64) -> Result<()> {
+    pub fn initialize_split(
+        ctx: Context<InitializeSplit>, 
+        split_id: u64
+    ) -> Result<()> {
         ctx.accounts.initialize_split(split_id, &ctx.bumps)
     }
 
@@ -45,5 +48,16 @@ pub mod divvy {
         ctx.accounts.claim()
     }
 
+    // Pause the split (Active -> Paused). Authority only
+    pub fn pause_split(ctx: Context<UpdateStatus>) -> Result<()> {
+        ctx.accounts.pause()
+    }
+
+    // Resume the split (Paused -> Active). Authority only
+    pub fn resume_split(ctx: Context<UpdateStatus>) -> Result<()> {
+        ctx.accounts.resume()
+    }
+
     
+
 }
