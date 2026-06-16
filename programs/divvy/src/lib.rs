@@ -16,7 +16,7 @@ pub mod divvy {
     use super::*;
 
     pub fn initialize_split(ctx: Context<InitializeSplit>, split_id: u64) -> Result<()> {
-        ctx.accounts.initialize(split_id, &ctx.bumps)
+        ctx.accounts.initialize_split(split_id, &ctx.bumps)
     }
 
     pub fn add_member(
