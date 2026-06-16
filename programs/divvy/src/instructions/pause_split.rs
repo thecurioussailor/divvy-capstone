@@ -26,7 +26,12 @@ impl<'info> UpdateStatus<'info> {
 
     pub fn resume(&mut self) -> Result<()> {
         require!(self.split_config.status == SplitStatus::Paused, DivvyError::SplitNotPaused);
+        
+        // A partially torn-down split (members already closed) cannot be reactivated.
+        require!(self.split_config.total_bps == TOTAL_BPS, DivvyError::TeardownInProgress);
+        
         self.split_config.status = SplitStatus::Active;
+        
         Ok(())
     }
 }
