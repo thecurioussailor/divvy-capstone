@@ -66,7 +66,7 @@ impl<'info> Deposit<'info> {
             self.token_mint.decimals
         )?;
 
-        // 7. Update total_deposited with net amount only
+        //Update total_deposited with net amount only
         self.split_config.total_deposited = self
             .split_config
             .total_deposited
