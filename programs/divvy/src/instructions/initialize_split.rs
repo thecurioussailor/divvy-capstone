@@ -3,6 +3,7 @@ use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
 
 use crate::state::{SplitConfig, SplitStatus};
 use crate::constants::*;
+use crate::utils::require_no_transfer_fee;
 
 #[derive(Accounts)]
 #[instruction(split_id: u64)]
@@ -43,6 +44,8 @@ pub struct InitializeSplit<'info> {
 
 impl<'info> InitializeSplit<'info> {
     pub fn initialize_split(&mut self, split_id: u64, bumps: &InitializeSplitBumps) -> Result<()> {
+        require_no_transfer_fee(&self.token_mint)?;
+
         self.split_config.set_inner(SplitConfig {
             authority:       self.authority.key(),
             token_mint:      self.token_mint.key(),
