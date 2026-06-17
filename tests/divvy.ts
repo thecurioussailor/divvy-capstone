@@ -8,9 +8,15 @@ import {
   mintTo,
   getAccount,
 } from "@solana/spl-token";
-import { Keypair, PublicKey } from "@solana/web3.js";
-import { assert } from "chai";
+import {
+  Keypair,
+  PublicKey,
+  SystemProgram,
+  Transaction,
+  sendAndConfirmTransaction,
+} from "@solana/web3.js";
 import { BN } from "bn.js";
+import { assert } from "chai";
 
 const SPLIT_SEED = Buffer.from("split");
 const VAULT_SEED = Buffer.from("vault");
@@ -21,19 +27,25 @@ describe("divvy", () => {
   anchor.setProvider(provider);
 
   const program = anchor.workspace.divvy as Program<Divvy>;
+
+  // The team lead / project authority — creates and manages the split
   const authority = provider.wallet as anchor.Wallet;
+
+  // A separate grant giver / foundation that deposits into the vault
+  const grantGiver = Keypair.generate();
 
   const splitId = new BN(1);
   const decimals = 6;
   const unit = 10 ** decimals;
 
+  // Three team members with agreed shares: 70% / 20% / 10%
   const founder = Keypair.generate();
   const developer = Keypair.generate();
   const designer = Keypair.generate();
   const members = [
-    { kp: founder, bps: 7000, expected: 700 * unit },
-    { kp: developer, bps: 2000, expected: 200 * unit },
-    { kp: designer, bps: 1000, expected: 100 * unit },
+    { kp: founder, bps: 7000, expected: 700 * unit, role: "founder" },
+    { kp: developer, bps: 2000, expected: 200 * unit, role: "developer" },
+    { kp: designer, bps: 1000, expected: 100 * unit, role: "designer" },
   ];
 
   let mint: PublicKey;
@@ -46,7 +58,28 @@ describe("divvy", () => {
       program.programId
     )[0];
 
+  // Fund a keypair with SOL from the authority wallet (reliable on devnet, no rate limits)
+  const fundWithSol = async (destination: PublicKey, lamports: number) => {
+    const tx = new Transaction().add(
+      SystemProgram.transfer({
+        fromPubkey: authority.publicKey,
+        toPubkey: destination,
+        lamports,
+      })
+    );
+    await sendAndConfirmTransaction(provider.connection, tx, [
+      (authority as any).payer,
+    ]);
+  };
+
   before(async () => {
+    // Fund the grant giver and all team members from the authority wallet
+    await fundWithSol(grantGiver.publicKey, 0.1 * 1e9);
+    for (const m of members) {
+      await fundWithSol(m.kp.publicKey, 0.05 * 1e9);
+    }
+
+    // Authority creates the token mint (represents e.g. USDC on devnet)
     mint = await createMint(
       provider.connection,
       (authority as any).payer,
@@ -55,8 +88,28 @@ describe("divvy", () => {
       decimals
     );
 
+    // Mint 1000 tokens to the grant giver (simulates grant funds received)
+    const grantGiverAta = await getOrCreateAssociatedTokenAccount(
+      provider.connection,
+      (authority as any).payer,
+      mint,
+      grantGiver.publicKey
+    );
+    await mintTo(
+      provider.connection,
+      (authority as any).payer,
+      mint,
+      grantGiverAta.address,
+      authority.publicKey,
+      1000 * unit
+    );
+
     [splitConfig] = PublicKey.findProgramAddressSync(
-      [SPLIT_SEED, authority.publicKey.toBuffer(), splitId.toArrayLike(Buffer, "le", 8)],
+      [
+        SPLIT_SEED,
+        authority.publicKey.toBuffer(),
+        splitId.toArrayLike(Buffer, "le", 8),
+      ],
       program.programId
     );
 
@@ -66,7 +119,7 @@ describe("divvy", () => {
     );
   });
 
-  it("initializes a split in draft", async () => {
+  it("team lead initializes the split in draft", async () => {
     await program.methods
       .initializeSplit(splitId)
       .accountsPartial({
@@ -81,7 +134,7 @@ describe("divvy", () => {
     assert.deepEqual(cfg.status, { draft: {} });
   });
 
-  it("adds three members totalling 10000 bps", async () => {
+  it("team lead adds three members with agreed shares totalling 10000 bps", async () => {
     for (const m of members) {
       await program.methods
         .addMember(m.kp.publicKey, m.bps)
@@ -97,7 +150,7 @@ describe("divvy", () => {
     assert.equal(cfg.totalBps, 10000);
   });
 
-  it("activates the split", async () => {
+  it("team lead activates the split — allocations are now locked", async () => {
     await program.methods
       .activateSplit()
       .accountsPartial({ splitConfig })
@@ -107,28 +160,28 @@ describe("divvy", () => {
     assert.deepEqual(cfg.status, { active: {} });
   });
 
-  it("accepts a 1000 token deposit", async () => {
-    const depositorAta = await getOrCreateAssociatedTokenAccount(
+  it("grant giver deposits 1000 tokens into the vault", async () => {
+    const grantGiverAta = await getOrCreateAssociatedTokenAccount(
       provider.connection,
-      (authority as any).payer,
+      grantGiver,
       mint,
-      authority.publicKey
-    );
-    await mintTo(
-      provider.connection,
-      (authority as any).payer,
-      mint,
-      depositorAta.address,
-      authority.publicKey,
-      1000 * unit
+      grantGiver.publicKey
     );
 
-    await program.methods
+    // Grant giver is a separate wallet — must be the fee payer for this tx
+    const grantGiverProvider = new anchor.AnchorProvider(
+      provider.connection,
+      new anchor.Wallet(grantGiver),
+      provider.opts
+    );
+    const grantGiverProgram = new anchor.Program(program.idl, grantGiverProvider) as Program<Divvy>;
+
+    await grantGiverProgram.methods
       .deposit(new BN(1000 * unit))
       .accountsPartial({
         splitConfig,
         tokenMint: mint,
-        depositorTokenAccount: depositorAta.address,
+        depositorTokenAccount: grantGiverAta.address,
         tokenProgram: TOKEN_PROGRAM_ID,
       })
       .rpc();
@@ -137,17 +190,11 @@ describe("divvy", () => {
     assert.equal(Number(v.amount), 1000 * unit);
   });
 
-  it("lets each member claim their exact share", async () => {
+  it("each team member claims their exact share", async () => {
     for (const m of members) {
-      const sig = await provider.connection.requestAirdrop(m.kp.publicKey, 1e9);
-      await provider.connection.confirmTransaction({
-        signature: sig,
-        ...(await provider.connection.getLatestBlockhash()),
-      });
-
       const memberAta = await getOrCreateAssociatedTokenAccount(
         provider.connection,
-        (authority as any).payer,
+        m.kp,
         mint,
         m.kp.publicKey
       );
@@ -166,15 +213,19 @@ describe("divvy", () => {
         .rpc();
 
       const acct = await getAccount(provider.connection, memberAta.address);
-      assert.equal(Number(acct.amount), m.expected, "member share mismatch");
+      assert.equal(
+        Number(acct.amount),
+        m.expected,
+        `${m.role} share mismatch`
+      );
     }
   });
 
-  it("rejects a second claim with nothing to claim", async () => {
+  it("rejects a second claim — nothing left to claim", async () => {
     const m = members[0];
     const memberAta = await getOrCreateAssociatedTokenAccount(
       provider.connection,
-      (authority as any).payer,
+      m.kp,
       mint,
       m.kp.publicKey
     );
@@ -197,7 +248,7 @@ describe("divvy", () => {
     }
   });
 
-  it("pauses, closes members, then closes the split", async () => {
+  it("team lead pauses, closes all members, then closes the split", async () => {
     await program.methods
       .pauseSplit()
       .accountsPartial({ splitConfig })
