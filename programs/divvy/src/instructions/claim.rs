@@ -24,6 +24,7 @@ pub struct Claim<'info> {
 
     #[account(address = split_config.token_mint @ DivvyError::WrongMint)]
     pub token_mint: InterfaceAccount<'info, Mint>,
+
     #[account(
         mut,
         has_one = member @ DivvyError::Unauthorized,
@@ -46,8 +47,9 @@ pub struct Claim<'info> {
 
     #[account(
         mut,
-        constraint = member_token_account.mint == split_config.token_mint @ DivvyError::WrongMint,
-        constraint = member_token_account.owner == member.key() @ DivvyError::Unauthorized,
+        associated_token::mint = token_mint,
+        associated_token::authority = member,
+        associated_token::token_program = token_program,
     )]
     pub member_token_account: InterfaceAccount<'info, TokenAccount>,
 
