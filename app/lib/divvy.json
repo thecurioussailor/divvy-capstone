@@ -1,0 +1,1126 @@
+{
+  "address": "CnjNV7e85KNBVEgDUkWwnRj8nthUYnaob9nFGFeXbTpT",
+  "metadata": {
+    "name": "divvy",
+    "version": "0.1.0",
+    "spec": "0.1.0",
+    "description": "Created with Anchor"
+  },
+  "instructions": [
+    {
+      "name": "activate_split",
+      "discriminator": [
+        83,
+        151,
+        232,
+        22,
+        12,
+        17,
+        4,
+        29
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "signer": true,
+          "relations": [
+            "split_config"
+          ]
+        },
+        {
+          "name": "split_config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  112,
+                  108,
+                  105,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "split_config.authority",
+                "account": "SplitConfig"
+              },
+              {
+                "kind": "account",
+                "path": "split_config.split_id",
+                "account": "SplitConfig"
+              }
+            ]
+          }
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "add_member",
+      "discriminator": [
+        13,
+        116,
+        123,
+        130,
+        126,
+        198,
+        57,
+        34
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "split_config"
+          ]
+        },
+        {
+          "name": "split_config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  112,
+                  108,
+                  105,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "authority"
+              },
+              {
+                "kind": "account",
+                "path": "split_config.split_id",
+                "account": "SplitConfig"
+              }
+            ]
+          }
+        },
+        {
+          "name": "member_allocation",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  101,
+                  109,
+                  98,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "split_config"
+              },
+              {
+                "kind": "arg",
+                "path": "member"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "member",
+          "type": "pubkey"
+        },
+        {
+          "name": "share_bps",
+          "type": "u16"
+        }
+      ]
+    },
+    {
+      "name": "claim",
+      "discriminator": [
+        62,
+        198,
+        214,
+        193,
+        213,
+        159,
+        108,
+        210
+      ],
+      "accounts": [
+        {
+          "name": "member",
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "member_allocation"
+          ]
+        },
+        {
+          "name": "split_config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  112,
+                  108,
+                  105,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "split_config.authority",
+                "account": "SplitConfig"
+              },
+              {
+                "kind": "account",
+                "path": "split_config.split_id",
+                "account": "SplitConfig"
+              }
+            ]
+          }
+        },
+        {
+          "name": "token_mint"
+        },
+        {
+          "name": "member_allocation",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  101,
+                  109,
+                  98,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "split_config"
+              },
+              {
+                "kind": "account",
+                "path": "member"
+              }
+            ]
+          }
+        },
+        {
+          "name": "vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "split_config"
+              }
+            ]
+          }
+        },
+        {
+          "name": "member_token_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "member"
+              },
+              {
+                "kind": "account",
+                "path": "token_program"
+              },
+              {
+                "kind": "account",
+                "path": "token_mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "token_program"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "close_member",
+      "docs": [
+        "Close a fully-claimed member's account during wind-down (Paused). Authority only."
+      ],
+      "discriminator": [
+        221,
+        98,
+        181,
+        59,
+        120,
+        117,
+        20,
+        22
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "split_config"
+          ]
+        },
+        {
+          "name": "split_config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  112,
+                  108,
+                  105,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "split_config.authority",
+                "account": "SplitConfig"
+              },
+              {
+                "kind": "account",
+                "path": "split_config.split_id",
+                "account": "SplitConfig"
+              }
+            ]
+          }
+        },
+        {
+          "name": "member_allocation",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  101,
+                  109,
+                  98,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "split_config"
+              },
+              {
+                "kind": "arg",
+                "path": "member"
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "member",
+          "type": "pubkey"
+        }
+      ]
+    },
+    {
+      "name": "close_split",
+      "docs": [
+        "Close the split: requires Paused and all members closed. Sweeps dust, reclaims rent."
+      ],
+      "discriminator": [
+        22,
+        32,
+        88,
+        169,
+        165,
+        249,
+        251,
+        232
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "split_config"
+          ]
+        },
+        {
+          "name": "split_config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  112,
+                  108,
+                  105,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "split_config.authority",
+                "account": "SplitConfig"
+              },
+              {
+                "kind": "account",
+                "path": "split_config.split_id",
+                "account": "SplitConfig"
+              }
+            ]
+          }
+        },
+        {
+          "name": "token_mint"
+        },
+        {
+          "name": "vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "split_config"
+              }
+            ]
+          }
+        },
+        {
+          "name": "authority_token_account",
+          "writable": true
+        },
+        {
+          "name": "token_program"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "deposit",
+      "discriminator": [
+        242,
+        35,
+        198,
+        137,
+        82,
+        225,
+        242,
+        182
+      ],
+      "accounts": [
+        {
+          "name": "depositor",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "split_config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  112,
+                  108,
+                  105,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "split_config.authority",
+                "account": "SplitConfig"
+              },
+              {
+                "kind": "account",
+                "path": "split_config.split_id",
+                "account": "SplitConfig"
+              }
+            ]
+          }
+        },
+        {
+          "name": "token_mint"
+        },
+        {
+          "name": "vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "split_config"
+              }
+            ]
+          }
+        },
+        {
+          "name": "depositor_token_account",
+          "writable": true
+        },
+        {
+          "name": "token_program"
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "initialize_split",
+      "discriminator": [
+        53,
+        17,
+        92,
+        9,
+        84,
+        151,
+        173,
+        78
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "token_mint"
+        },
+        {
+          "name": "split_config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  112,
+                  108,
+                  105,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "authority"
+              },
+              {
+                "kind": "arg",
+                "path": "split_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "split_config"
+              }
+            ]
+          }
+        },
+        {
+          "name": "token_program"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "split_id",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "pause_split",
+      "discriminator": [
+        211,
+        9,
+        244,
+        30,
+        56,
+        109,
+        201,
+        106
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "signer": true,
+          "relations": [
+            "split_config"
+          ]
+        },
+        {
+          "name": "split_config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  112,
+                  108,
+                  105,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "split_config.authority",
+                "account": "SplitConfig"
+              },
+              {
+                "kind": "account",
+                "path": "split_config.split_id",
+                "account": "SplitConfig"
+              }
+            ]
+          }
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "resume_split",
+      "discriminator": [
+        151,
+        208,
+        1,
+        155,
+        141,
+        80,
+        120,
+        39
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "signer": true,
+          "relations": [
+            "split_config"
+          ]
+        },
+        {
+          "name": "split_config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  112,
+                  108,
+                  105,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "split_config.authority",
+                "account": "SplitConfig"
+              },
+              {
+                "kind": "account",
+                "path": "split_config.split_id",
+                "account": "SplitConfig"
+              }
+            ]
+          }
+        }
+      ],
+      "args": []
+    }
+  ],
+  "accounts": [
+    {
+      "name": "MemberAllocation",
+      "discriminator": [
+        206,
+        61,
+        79,
+        66,
+        146,
+        200,
+        159,
+        57
+      ]
+    },
+    {
+      "name": "SplitConfig",
+      "discriminator": [
+        49,
+        201,
+        50,
+        228,
+        22,
+        142,
+        12,
+        222
+      ]
+    }
+  ],
+  "events": [
+    {
+      "name": "ClaimEvent",
+      "discriminator": [
+        93,
+        15,
+        70,
+        170,
+        48,
+        140,
+        212,
+        219
+      ]
+    },
+    {
+      "name": "DepositEvent",
+      "discriminator": [
+        120,
+        248,
+        61,
+        83,
+        31,
+        142,
+        107,
+        144
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "InvalidAllocationSum",
+      "msg": "Allocations must sum to exactly 10000 basis points"
+    },
+    {
+      "code": 6001,
+      "name": "NoMembers",
+      "msg": "The split must have at least one member"
+    },
+    {
+      "code": 6002,
+      "name": "TooManyMembers",
+      "msg": "Too many members for this split"
+    },
+    {
+      "code": 6003,
+      "name": "SplitNotActive",
+      "msg": "The split is not active"
+    },
+    {
+      "code": 6004,
+      "name": "SplitPaused",
+      "msg": "The split is paused"
+    },
+    {
+      "code": 6005,
+      "name": "SplitClosed",
+      "msg": "The split is closed"
+    },
+    {
+      "code": 6006,
+      "name": "SplitNotDraft",
+      "msg": "The split must be in draft for this action"
+    },
+    {
+      "code": 6007,
+      "name": "SplitNotPaused",
+      "msg": "The split is not paused"
+    },
+    {
+      "code": 6008,
+      "name": "Unauthorized",
+      "msg": "Only the authority may perform this action"
+    },
+    {
+      "code": 6009,
+      "name": "NothingToClaim",
+      "msg": "Nothing is available to claim"
+    },
+    {
+      "code": 6010,
+      "name": "MathOverflow",
+      "msg": "Arithmetic overflow"
+    },
+    {
+      "code": 6011,
+      "name": "VaultNotEmpty",
+      "msg": "The vault must be empty before closing"
+    },
+    {
+      "code": 6012,
+      "name": "ZeroShare",
+      "msg": "Share must be greater than zero"
+    },
+    {
+      "code": 6013,
+      "name": "ZeroAmount",
+      "msg": "Amount must be greater than zero"
+    },
+    {
+      "code": 6014,
+      "name": "WrongMint",
+      "msg": "Token account mint does not match the split"
+    },
+    {
+      "code": 6015,
+      "name": "TransferFeeNotSupported",
+      "msg": "Mints with a transfer-fee extension are not supported"
+    },
+    {
+      "code": 6016,
+      "name": "MemberHasUnclaimedFunds",
+      "msg": "Member still has unclaimed funds"
+    },
+    {
+      "code": 6017,
+      "name": "MembersRemaining",
+      "msg": "All members must be closed before closing the split"
+    },
+    {
+      "code": 6018,
+      "name": "TeardownInProgress",
+      "msg": "Cannot resume a split whose teardown has started"
+    }
+  ],
+  "types": [
+    {
+      "name": "ClaimEvent",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "split",
+            "type": "pubkey"
+          },
+          {
+            "name": "member",
+            "type": "pubkey"
+          },
+          {
+            "name": "amount",
+            "type": "u64"
+          },
+          {
+            "name": "total_claimed",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "DepositEvent",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "split",
+            "type": "pubkey"
+          },
+          {
+            "name": "payer",
+            "type": "pubkey"
+          },
+          {
+            "name": "amount",
+            "type": "u64"
+          },
+          {
+            "name": "total_deposited",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "MemberAllocation",
+      "docs": [
+        "One per member of a split. Allocation is fixed once the split is activated."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "split",
+            "docs": [
+              "The split this allocation belongs to."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "member",
+            "docs": [
+              "The member's wallet."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "share_bps",
+            "docs": [
+              "Fixed share in basis points (10000 = 100%)."
+            ],
+            "type": "u16"
+          },
+          {
+            "name": "total_claimed",
+            "docs": [
+              "Cumulative amount this member has already claimed."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "bump",
+            "docs": [
+              "Bump for this PDA."
+            ],
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "SplitConfig",
+      "docs": [
+        "The pool's settings. One per (authority, split_id)"
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "authority",
+            "docs": [
+              "Admin allowed to manage the split"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "token_mint",
+            "docs": [
+              "The SPL mint this split accepts (e.g. USDC)"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "split_id",
+            "docs": [
+              "Distinguishes multiple splits owned by the same authority."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "status",
+            "docs": [
+              "Lifecycle state."
+            ],
+            "type": {
+              "defined": {
+                "name": "SplitStatus"
+              }
+            }
+          },
+          {
+            "name": "member_count",
+            "docs": [
+              "Number of members added."
+            ],
+            "type": "u8"
+          },
+          {
+            "name": "total_bps",
+            "docs": [
+              "Running sum of member shares; must equal 10000 to activate"
+            ],
+            "type": "u16"
+          },
+          {
+            "name": "total_deposited",
+            "docs": [
+              "Cumulative tokens ever deposited (basis for claim math)"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "vault_bump",
+            "docs": [
+              "Bump for the vault PDA"
+            ],
+            "type": "u8"
+          },
+          {
+            "name": "bump",
+            "docs": [
+              "Bump for this config PDA"
+            ],
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "SplitStatus",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Draft"
+          },
+          {
+            "name": "Active"
+          },
+          {
+            "name": "Paused"
+          },
+          {
+            "name": "Closed"
+          }
+        ]
+      }
+    }
+  ],
+  "constants": [
+    {
+      "name": "MEMBER_SEED",
+      "type": "bytes",
+      "value": "[109, 101, 109, 98, 101, 114]"
+    },
+    {
+      "name": "SPLIT_SEED",
+      "type": "bytes",
+      "value": "[115, 112, 108, 105, 116]"
+    },
+    {
+      "name": "VAULT_SEED",
+      "type": "bytes",
+      "value": "[118, 97, 117, 108, 116]"
+    }
+  ]
+}
