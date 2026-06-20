@@ -34,7 +34,7 @@ describe("divvy", () => {
   // A separate grant giver / foundation that deposits into the vault
   const grantGiver = Keypair.generate();
 
-  const splitId = new BN(1);
+  const splitId = new BN(Date.now());
   const decimals = 6;
   const unit = 10 ** decimals;
 
