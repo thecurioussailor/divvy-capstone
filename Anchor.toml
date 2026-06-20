@@ -5,11 +5,11 @@ package_manager = "yarn"
 resolution = true
 skip-lint = false
 
-[programs.localnet]
-divvy = "HKbBGFwWNVYLa7MnyKVZoZNrVy9BthdizHXfKZNwGmZm"
+[programs.devnet]
+divvy = "CnjNV7e85KNBVEgDUkWwnRj8nthUYnaob9nFGFeXbTpT"
 
 [provider]
-cluster = "localnet"
+cluster = "devnet"
 wallet = "~/.config/solana/id.json"
 
 [scripts]

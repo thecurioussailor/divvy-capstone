@@ -12,7 +12,7 @@ pub use instructions::*;
 pub use state::*;
 
 
-declare_id!("HKbBGFwWNVYLa7MnyKVZoZNrVy9BthdizHXfKZNwGmZm");
+declare_id!("CnjNV7e85KNBVEgDUkWwnRj8nthUYnaob9nFGFeXbTpT");
 
 #[program]
 pub mod divvy {
