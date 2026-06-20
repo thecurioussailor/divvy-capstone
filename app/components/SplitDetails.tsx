@@ -2,10 +2,15 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { PublicKey } from "@solana/web3.js";
-import { useWallet } from "@solana/wallet-adapter-react";
+import { useWallet, useConnection } from "@solana/wallet-adapter-react";
+import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import BN from "bn.js";
 import { useProgram } from "../lib/useProgram";
-import { getMembersForSplit } from "../lib/program";
+import {
+  getMembersForSplit,
+  getMemberAllocationPda,
+  ensureAssociatedTokenAccount,
+} from "../lib/program";
 import AddMemberForm from "./AddMemberForm";
 import DepositForm from "./DepositForm";
 import ClaimForm from "./ClaimForm";
@@ -36,7 +41,8 @@ export default function SplitDetails({
   splitConfig: PublicKey;
 }) {
   const program = useProgram();
-  const { publicKey } = useWallet();
+  const { publicKey, signTransaction } = useWallet();
+  const { connection } = useConnection();
   const [account, setAccount] = useState<SplitConfigAccount | null>(null);
   const [members, setMembers] = useState<MemberAllocationAccount[]>([]);
   const [activateStatus, setActivateStatus] = useState<string | null>(null);
@@ -70,10 +76,88 @@ export default function SplitDetails({
     }
   }
 
+  async function handlePause() {
+    if (!program) return;
+    try {
+      setActivateStatus("Pausing...");
+      const signature = await program.methods
+        .pauseSplit()
+        .accountsPartial({ splitConfig })
+        .rpc();
+      setActivateStatus(`Paused! Tx: ${signature}`);
+      await load();
+    } catch (err) {
+      console.error(err);
+      setActivateStatus(`Error: ${(err as Error).message}`);
+    }
+  }
+
+  async function handleResume() {
+    if (!program) return;
+    try {
+      setActivateStatus("Resuming...");
+      const signature = await program.methods
+        .resumeSplit()
+        .accountsPartial({ splitConfig })
+        .rpc();
+      setActivateStatus(`Resumed! Tx: ${signature}`);
+      await load();
+    } catch (err) {
+      console.error(err);
+      setActivateStatus(`Error: ${(err as Error).message}`);
+    }
+  }
+
+  async function handleCloseMember(member: PublicKey) {
+    if (!program) return;
+    try {
+      setActivateStatus("Closing member...");
+      const memberAllocation = getMemberAllocationPda(splitConfig, member);
+      const signature = await program.methods
+        .closeMember(member)
+        .accountsPartial({ splitConfig, memberAllocation })
+        .rpc();
+      setActivateStatus(`Member closed! Tx: ${signature}`);
+      await load();
+    } catch (err) {
+      console.error(err);
+      setActivateStatus(`Error: ${(err as Error).message}`);
+    }
+  }
+
+  async function handleCloseSplit() {
+    if (!program || !publicKey || !signTransaction || !account) return;
+    try {
+      setActivateStatus("Closing split...");
+
+      const authorityTokenAccount = await ensureAssociatedTokenAccount(
+        connection,
+        { publicKey, signTransaction },
+        account.tokenMint
+      );
+
+      const signature = await program.methods
+        .closeSplit()
+        .accountsPartial({
+          splitConfig,
+          tokenMint: account.tokenMint,
+          authorityTokenAccount,
+          tokenProgram: TOKEN_PROGRAM_ID,
+        })
+        .rpc();
+
+      setActivateStatus(`Split closed! Tx: ${signature}`);
+    } catch (err) {
+      console.error(err);
+      setActivateStatus(`Error: ${(err as Error).message}`);
+    }
+  }
+
   if (!account) return <p className="text-sm text-zinc-500">Loading split...</p>;
 
   const statusLabel = Object.keys(account.status)[0];
   const canActivate = statusLabel === "draft" && account.totalBps === 10000;
+  const isAuthority = publicKey?.equals(account.authority) ?? false;
 
   return (
     <div className="flex flex-col gap-6 w-full max-w-md">
@@ -94,12 +178,39 @@ export default function SplitDetails({
           mint: <span className="font-mono">{account.tokenMint.toBase58()}</span>
         </div>
 
-        {canActivate && (
+        {isAuthority && canActivate && (
           <button
             onClick={handleActivate}
             className="mt-3 bg-black text-white rounded px-4 py-2 text-sm"
           >
             Activate Split
+          </button>
+        )}
+
+        {isAuthority && statusLabel === "active" && (
+          <button
+            onClick={handlePause}
+            className="mt-3 border border-zinc-300 rounded px-4 py-2 text-sm"
+          >
+            Pause Split
+          </button>
+        )}
+
+        {isAuthority && statusLabel === "paused" && account.totalBps === 10000 && (
+          <button
+            onClick={handleResume}
+            className="mt-3 border border-zinc-300 rounded px-4 py-2 text-sm"
+          >
+            Resume Split
+          </button>
+        )}
+
+        {isAuthority && statusLabel === "paused" && account.memberCount === 0 && (
+          <button
+            onClick={handleCloseSplit}
+            className="mt-3 bg-red-600 text-white rounded px-4 py-2 text-sm"
+          >
+            Close Split
           </button>
         )}
 
@@ -116,18 +227,35 @@ export default function SplitDetails({
         )}
 
         <ul className="mt-2 flex flex-col gap-2">
-          {members.map(({ publicKey, account: m }) => (
-            <li key={publicKey.toBase58()} className="text-sm">
-              <span className="font-mono text-xs text-zinc-600">
-                {m.member.toBase58()}
-              </span>
-              <span className="text-zinc-700">
-                {" "}
-                — {(m.shareBps / 100).toFixed(2)}% · claimed:{" "}
-                {m.totalClaimed.toString()}
-              </span>
-            </li>
-          ))}
+          {members.map(({ publicKey, account: m }) => {
+            const entitled = account.totalDeposited
+              .mul(new BN(m.shareBps))
+              .div(new BN(10000));
+            const claimable = entitled.sub(m.totalClaimed);
+            const canClose =
+              isAuthority && statusLabel === "paused" && claimable.isZero();
+
+            return (
+              <li key={publicKey.toBase58()} className="text-sm">
+                <span className="font-mono text-xs text-zinc-600">
+                  {m.member.toBase58()}
+                </span>
+                <span className="text-zinc-700">
+                  {" "}
+                  — {(m.shareBps / 100).toFixed(2)}% · claimed:{" "}
+                  {m.totalClaimed.toString()}
+                </span>
+                {canClose && (
+                  <button
+                    onClick={() => handleCloseMember(m.member)}
+                    className="ml-2 text-xs text-red-600 underline"
+                  >
+                    Close
+                  </button>
+                )}
+              </li>
+            );
+          })}
         </ul>
       </div>
 
