@@ -53,8 +53,24 @@ Tests cover the full lifecycle: initialize → add 3 members (70/20/10%) → act
 
 ## Devnet
 
-> Program ID and passing test screenshot will be added after devnet deployment.
+Deployed and tested on Solana devnet.
 
-## Program ID
+**Program ID:** `CnjNV7e85KNBVEgDUkWwnRj8nthUYnaob9nFGFeXbTpT`
 
-> To be added after devnet deployment.
+[View on Solana Explorer](https://explorer.solana.com/address/CnjNV7e85KNBVEgDUkWwnRj8nthUYnaob9nFGFeXbTpT?cluster=devnet)
+
+### Passing devnet tests
+
+> Screenshot of `anchor test` passing against devnet goes here.
+
+## Frontend
+
+A Next.js frontend (in `app/`) lets you create a split, add members, activate, deposit, and claim — all against the deployed devnet program, using a real wallet (Phantom/Solflare).
+
+```bash
+cd app
+pnpm install
+pnpm dev
+```
+
+> Screenshot(s) of the frontend in action go here.
