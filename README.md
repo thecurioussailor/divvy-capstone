@@ -61,7 +61,7 @@ Deployed and tested on Solana devnet.
 
 ### Passing devnet tests
 
-> Screenshot of `anchor test` passing against devnet goes here.
+![Devnet tests passing](tests.png)
 
 ## Frontend
 

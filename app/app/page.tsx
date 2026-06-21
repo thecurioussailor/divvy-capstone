@@ -6,6 +6,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { ShieldCheck, Lock, Blocks, Link2, FileText } from "lucide-react";
+import { FaGithub } from "react-icons/fa";
 
 const WalletMultiButton = dynamic(
   () =>
@@ -169,7 +170,7 @@ export default function Landing() {
               alt="Divvy"
               width={140}
               height={60}
-              style={{ height: "60px", width: "auto" }}
+              style={{ height: "40px", width: "auto" }}
             />
             <span className="text-[13px]" style={{ color: "var(--text-muted)" }}>
               Built on Solana
@@ -177,10 +178,10 @@ export default function Landing() {
           </div>
 
           <div className="flex items-center gap-5 text-[13px]" style={{ color: "var(--text-muted)" }}>
-            <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 hover:underline">
-              <Link2 size={14} /> GitHub
+            <a href="https://github.com/thecurioussailor/divvy-capstone" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 hover:underline">
+              <FaGithub size={14}/> GitHub
             </a>
-            <a href="/README.md" className="flex items-center gap-1.5 hover:underline">
+            <a href="https://github.com/thecurioussailor/divvy-capstone#divvy" className="flex items-center gap-1.5 hover:underline">
               <FileText size={14} /> Docs
             </a>
             <span style={{ color: "var(--text-subtle)" }}>© 2026 Divvy</span>
