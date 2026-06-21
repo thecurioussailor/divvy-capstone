@@ -8,5 +8,10 @@ export default function StatusBadge({ status }: { status: string }) {
       ? "badge badge-closed"
       : "badge badge-draft";
 
-  return <span className={className}>{status}</span>;
+  return (
+    <span className={className}>
+      <span className="badge-dot" />
+      {status}
+    </span>
+  );
 }

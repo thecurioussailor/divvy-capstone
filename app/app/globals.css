@@ -172,22 +172,37 @@ body {
 
   /* ---------- status badge ---------- */
   .badge {
-    @apply inline-flex items-center text-xs font-semibold rounded-full px-2.5 py-0.5;
+    @apply inline-flex items-center gap-1.5 text-xs font-semibold rounded-full px-3 py-1 whitespace-nowrap;
+  }
+  .badge-dot {
+    @apply inline-block w-1.5 h-1.5 rounded-full;
   }
   .badge-draft {
-    background: var(--surface-2);
-    color: var(--status-draft);
+    background: #F4F4F5;
+    color: #52525B;
+  }
+  .badge-draft .badge-dot {
+    background: #A1A1AA;
   }
   .badge-active {
-    background: #F0FDF4;
-    color: var(--status-active);
+    background: #DCFCE7;
+    color: #15803D;
+  }
+  .badge-active .badge-dot {
+    background: #22C55E;
   }
   .badge-paused {
-    background: #FFFBEB;
-    color: var(--status-paused);
+    background: #FEF3C7;
+    color: #B45309;
+  }
+  .badge-paused .badge-dot {
+    background: #F59E0B;
   }
   .badge-closed {
-    background: #FEF2F2;
-    color: var(--status-closed);
+    background: #FEE2E2;
+    color: #B91C1C;
+  }
+  .badge-closed .badge-dot {
+    background: #EF4444;
   }
 }

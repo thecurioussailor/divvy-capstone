@@ -27,9 +27,9 @@ export default function Navbar({
           src="/divvylogo.png"
           alt="Divvy"
           width={140}
-          height={40}
+          height={60}
           priority
-          style={{ height: "32px", width: "auto" }}
+          style={{ height: "80px", width: "auto" }}
         />
       </div>
       {showConnectButton ? <WalletMultiButton /> : <WalletMenu />}
