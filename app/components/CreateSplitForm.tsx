@@ -8,15 +8,18 @@ import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import { useProgram } from "../lib/useProgram";
 
 export default function CreateSplitForm({
-    onCreated
+  onCreated,
 }: {
-    onCreated?: (splitConfig: PublicKey) => void;
+  onCreated?: (splitConfig: PublicKey) => void;
 }) {
   const { publicKey } = useWallet();
   const program = useProgram();
 
   const [tokenMint, setTokenMint] = useState("");
   const [status, setStatus] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  const canSubmit = !!publicKey && !!tokenMint && !loading;
 
   async function handleCreateSplit() {
     if (!program || !publicKey) {
@@ -25,7 +28,8 @@ export default function CreateSplitForm({
     }
 
     try {
-      setStatus("Sending transaction...");
+      setLoading(true);
+      setStatus("Sending transaction…");
 
       const splitId = new BN(Date.now());
       const mint = new PublicKey(tokenMint);
@@ -39,36 +43,57 @@ export default function CreateSplitForm({
         .rpc();
 
       const splitConfig = getSplitConfigPda(publicKey, splitId);
-      setStatus(`Split created at ${splitConfig.toBase58()} \n Tx: ${signature}`);
+      setStatus(`Split created. Tx: ${signature}`);
       onCreated?.(splitConfig);
     } catch (err) {
       console.error(err);
       setStatus(`Error: ${(err as Error).message}`);
+    } finally {
+      setLoading(false);
     }
   }
 
   return (
-    <div className="flex flex-col gap-4 w-full max-w-md">
-      <label className="flex flex-col gap-1">
-        <span className="text-sm font-medium">Token Mint Address</span>
-        <input
-          type="text"
-          value={tokenMint}
-          onChange={(e) => setTokenMint(e.target.value)}
-          placeholder="Paste a devnet SPL token mint address"
-          className="border rounded px-3 py-2 text-sm"
-        />
-      </label>
+    <div className="flex justify-center pt-[72px]">
+      <div className="card w-full max-w-[560px] flex flex-col gap-6">
+        <div>
+          <h1 className="h1">Create a new split</h1>
+          <p className="meta mt-1">
+            Choose the token this split will distribute and who receives what.
+          </p>
+        </div>
 
-      <button
-        onClick={handleCreateSplit}
-        disabled={!publicKey || !tokenMint}
-        className="bg-black text-white rounded px-4 py-2 disabled:opacity-40"
-      >
-        Create Split
-      </button>
+        <div className="flex flex-col gap-1.5">
+          <label className="label">Token mint address</label>
+          <input
+            type="text"
+            value={tokenMint}
+            onChange={(e) => setTokenMint(e.target.value)}
+            placeholder="Paste a devnet SPL token mint"
+            className="input-field mono"
+          />
+          <p className="helper-text">
+            The SPL or Token-2022 mint this split will accept deposits in.
+          </p>
+        </div>
 
-      {status && <p className="text-sm break-all">{status}</p>}
+        <div>
+          <button
+            onClick={handleCreateSplit}
+            disabled={!canSubmit}
+            className="btn-primary w-full"
+          >
+            {loading ? "Creating…" : "Create split"}
+          </button>
+          {!publicKey && (
+            <p className="helper-text mt-2">
+              Connect a wallet and enter a valid mint to continue.
+            </p>
+          )}
+        </div>
+
+        {status && <p className="meta break-all">{status}</p>}
+      </div>
     </div>
   );
 }

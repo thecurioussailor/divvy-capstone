@@ -10,13 +10,16 @@ export default function AddMemberForm({
   onMemberAdded,
 }: {
   splitConfig: PublicKey;
-  onMemberAdded?: () => void
+  onMemberAdded?: () => void;
 }) {
   const program = useProgram();
 
   const [memberAddress, setMemberAddress] = useState("");
   const [shareBps, setShareBps] = useState("");
   const [status, setStatus] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  const canSubmit = !!memberAddress && !!shareBps && !loading;
 
   async function handleAddMember() {
     if (!program) {
@@ -25,7 +28,8 @@ export default function AddMemberForm({
     }
 
     try {
-      setStatus("Sending transaction...");
+      setLoading(true);
+      setStatus("Sending transaction…");
 
       const member = new PublicKey(memberAddress);
       const bps = parseInt(shareBps, 10);
@@ -39,26 +43,31 @@ export default function AddMemberForm({
         })
         .rpc();
 
-      setStatus(`Member added! Tx: ${signature}`);
+      setStatus(`Member added. Tx: ${signature}`);
       setMemberAddress("");
       setShareBps("");
       onMemberAdded?.();
     } catch (err) {
       console.error(err);
       setStatus(`Error: ${(err as Error).message}`);
+    } finally {
+      setLoading(false);
     }
   }
 
   return (
-    <div className="flex flex-col gap-3 w-full max-w-md border rounded p-4">
-      <span className="text-sm font-medium">Add Member</span>
+    <div
+      className="flex flex-col gap-3 pt-4"
+      style={{ borderTop: "1px solid var(--border)" }}
+    >
+      <span className="label">Add member</span>
 
       <input
         type="text"
         value={memberAddress}
         onChange={(e) => setMemberAddress(e.target.value)}
         placeholder="Member wallet address"
-        className="border rounded px-3 py-2 text-sm"
+        className="input-field mono"
       />
 
       <input
@@ -66,18 +75,18 @@ export default function AddMemberForm({
         value={shareBps}
         onChange={(e) => setShareBps(e.target.value)}
         placeholder="Share in basis points (e.g. 5000 = 50%)"
-        className="border rounded px-3 py-2 text-sm"
+        className="input-field"
       />
 
       <button
         onClick={handleAddMember}
-        disabled={!memberAddress || !shareBps}
-        className="bg-black text-white rounded px-4 py-2 disabled:opacity-40"
+        disabled={!canSubmit}
+        className="btn-primary w-full"
       >
-        Add Member
+        {loading ? "Adding…" : "Add member"}
       </button>
 
-      {status && <p className="text-sm break-all">{status}</p>}
+      {status && <p className="meta break-all">{status}</p>}
     </div>
   );
 }

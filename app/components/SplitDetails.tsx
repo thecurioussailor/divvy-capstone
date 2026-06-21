@@ -11,6 +11,8 @@ import {
   getMemberAllocationPda,
   ensureAssociatedTokenAccount,
 } from "../lib/program";
+import StatusBadge from "./StatusBadge";
+import CopyButton from "./CopyButton";
 import AddMemberForm from "./AddMemberForm";
 import DepositForm from "./DepositForm";
 import ClaimForm from "./ClaimForm";
@@ -35,6 +37,10 @@ type MemberAllocationAccount = {
   };
 };
 
+function shorten(address: string) {
+  return `${address.slice(0, 4)}…${address.slice(-4)}`;
+}
+
 export default function SplitDetails({
   splitConfig,
 }: {
@@ -46,6 +52,7 @@ export default function SplitDetails({
   const [account, setAccount] = useState<SplitConfigAccount | null>(null);
   const [members, setMembers] = useState<MemberAllocationAccount[]>([]);
   const [activateStatus, setActivateStatus] = useState<string | null>(null);
+  const [lifecycleLoading, setLifecycleLoading] = useState(false);
 
   const load = useCallback(async () => {
     if (!program) return;
@@ -63,72 +70,85 @@ export default function SplitDetails({
   async function handleActivate() {
     if (!program) return;
     try {
-      setActivateStatus("Activating...");
+      setLifecycleLoading(true);
+      setActivateStatus("Activating…");
       const signature = await program.methods
         .activateSplit()
         .accountsPartial({ splitConfig })
         .rpc();
-      setActivateStatus(`Activated! Tx: ${signature}`);
+      setActivateStatus(`Activated. Tx: ${signature}`);
       await load();
     } catch (err) {
       console.error(err);
       setActivateStatus(`Error: ${(err as Error).message}`);
+    } finally {
+      setLifecycleLoading(false);
     }
   }
 
   async function handlePause() {
     if (!program) return;
     try {
-      setActivateStatus("Pausing...");
+      setLifecycleLoading(true);
+      setActivateStatus("Pausing…");
       const signature = await program.methods
         .pauseSplit()
         .accountsPartial({ splitConfig })
         .rpc();
-      setActivateStatus(`Paused! Tx: ${signature}`);
+      setActivateStatus(`Paused. Tx: ${signature}`);
       await load();
     } catch (err) {
       console.error(err);
       setActivateStatus(`Error: ${(err as Error).message}`);
+    } finally {
+      setLifecycleLoading(false);
     }
   }
 
   async function handleResume() {
     if (!program) return;
     try {
-      setActivateStatus("Resuming...");
+      setLifecycleLoading(true);
+      setActivateStatus("Resuming…");
       const signature = await program.methods
         .resumeSplit()
         .accountsPartial({ splitConfig })
         .rpc();
-      setActivateStatus(`Resumed! Tx: ${signature}`);
+      setActivateStatus(`Resumed. Tx: ${signature}`);
       await load();
     } catch (err) {
       console.error(err);
       setActivateStatus(`Error: ${(err as Error).message}`);
+    } finally {
+      setLifecycleLoading(false);
     }
   }
 
   async function handleCloseMember(member: PublicKey) {
     if (!program) return;
     try {
-      setActivateStatus("Closing member...");
+      setLifecycleLoading(true);
+      setActivateStatus("Closing member…");
       const memberAllocation = getMemberAllocationPda(splitConfig, member);
       const signature = await program.methods
         .closeMember(member)
         .accountsPartial({ splitConfig, memberAllocation })
         .rpc();
-      setActivateStatus(`Member closed! Tx: ${signature}`);
+      setActivateStatus(`Member closed. Tx: ${signature}`);
       await load();
     } catch (err) {
       console.error(err);
       setActivateStatus(`Error: ${(err as Error).message}`);
+    } finally {
+      setLifecycleLoading(false);
     }
   }
 
   async function handleCloseSplit() {
     if (!program || !publicKey || !signTransaction || !account) return;
     try {
-      setActivateStatus("Closing split...");
+      setLifecycleLoading(true);
+      setActivateStatus("Closing split…");
 
       const authorityTokenAccount = await ensureAssociatedTokenAccount(
         connection,
@@ -146,140 +166,178 @@ export default function SplitDetails({
         })
         .rpc();
 
-      setActivateStatus(`Split closed! Tx: ${signature}`);
+      setActivateStatus(`Split closed. Tx: ${signature}`);
     } catch (err) {
       console.error(err);
       setActivateStatus(`Error: ${(err as Error).message}`);
+    } finally {
+      setLifecycleLoading(false);
     }
   }
 
-  if (!account) return <p className="text-sm text-zinc-500">Loading split...</p>;
+  if (!account) {
+    return (
+      <div className="flex flex-col gap-4 max-w-4xl mx-auto pt-16">
+        <div className="h-8 w-64 rounded-lg animate-pulse" style={{ background: "var(--surface-2)" }} />
+        <div className="h-32 rounded-2xl animate-pulse" style={{ background: "var(--surface-2)" }} />
+      </div>
+    );
+  }
 
   const statusLabel = Object.keys(account.status)[0];
   const canActivate = statusLabel === "draft" && account.totalBps === 10000;
   const isAuthority = publicKey?.equals(account.authority) ?? false;
+  const splitAddress = splitConfig.toBase58();
+  const mintAddress = account.tokenMint.toBase58();
+
+  const isMember =
+    !!publicKey && members.some((m) => m.account.member.equals(publicKey));
 
   return (
-    <div className="flex flex-col gap-6 w-full max-w-md">
-      <div className="border border-zinc-200 rounded p-4 bg-white">
-        <div className="font-mono text-xs break-all text-zinc-500">
-          {splitConfig.toBase58()}
+    <div className="flex flex-col gap-6 max-w-4xl mx-auto py-10 px-6">
+      {/* header */}
+      <div>
+        <div className="flex items-center gap-2 flex-wrap">
+          <h1 className="h1 mono text-2xl">{shorten(splitAddress)}</h1>
+          <CopyButton text={splitAddress} />
+          <StatusBadge status={statusLabel} />
         </div>
-        <div className="mt-2 text-sm text-zinc-700">
-          status: <span className="font-medium">{statusLabel}</span>
-        </div>
-        <div className="text-sm text-zinc-700">
-          members: {account.memberCount} · total bps: {account.totalBps}
-        </div>
-        <div className="text-sm text-zinc-700">
+        <p className="meta mt-1">
+          members: {account.memberCount} · total bps: {account.totalBps} ·
           total deposited: {account.totalDeposited.toString()}
-        </div>
-        <div className="text-xs text-zinc-500 mt-1">
-          mint: <span className="font-mono">{account.tokenMint.toBase58()}</span>
-        </div>
-
-        {isAuthority && canActivate && (
-          <button
-            onClick={handleActivate}
-            className="mt-3 bg-black text-white rounded px-4 py-2 text-sm"
-          >
-            Activate Split
-          </button>
-        )}
-
-        {isAuthority && statusLabel === "active" && (
-          <button
-            onClick={handlePause}
-            className="mt-3 border border-zinc-300 rounded px-4 py-2 text-sm"
-          >
-            Pause Split
-          </button>
-        )}
-
-        {isAuthority && statusLabel === "paused" && account.totalBps === 10000 && (
-          <button
-            onClick={handleResume}
-            className="mt-3 border border-zinc-300 rounded px-4 py-2 text-sm"
-          >
-            Resume Split
-          </button>
-        )}
-
-        {isAuthority && statusLabel === "paused" && account.memberCount === 0 && (
-          <button
-            onClick={handleCloseSplit}
-            className="mt-3 bg-red-600 text-white rounded px-4 py-2 text-sm"
-          >
-            Close Split
-          </button>
-        )}
-
-        {activateStatus && (
-          <p className="text-sm break-all mt-2">{activateStatus}</p>
-        )}
+        </p>
+        <p className="meta mt-1 flex items-center gap-1">
+          mint: <span className="mono">{shorten(mintAddress)}</span>
+          <CopyButton text={mintAddress} />
+        </p>
       </div>
 
-      <div className="border border-zinc-200 rounded p-4 bg-white">
-        <span className="text-sm font-medium">Members</span>
-
-        {members.length === 0 && (
-          <p className="text-sm text-zinc-500 mt-2">No members yet.</p>
-        )}
-
-        <ul className="mt-2 flex flex-col gap-2">
-          {members.map(({ publicKey, account: m }) => {
-            const entitled = account.totalDeposited
-              .mul(new BN(m.shareBps))
-              .div(new BN(10000));
-            const claimable = entitled.sub(m.totalClaimed);
-            const canClose =
-              isAuthority && statusLabel === "paused" && claimable.isZero();
-
-            return (
-              <li key={publicKey.toBase58()} className="text-sm">
-                <span className="font-mono text-xs text-zinc-600">
-                  {m.member.toBase58()}
-                </span>
-                <span className="text-zinc-700">
-                  {" "}
-                  — {(m.shareBps / 100).toFixed(2)}% · claimed:{" "}
-                  {m.totalClaimed.toString()}
-                </span>
-                {canClose && (
-                  <button
-                    onClick={() => handleCloseMember(m.member)}
-                    className="ml-2 text-xs text-red-600 underline"
-                  >
-                    Close
-                  </button>
+      <div className="grid gap-6 md:grid-cols-2">
+        {/* lifecycle controls */}
+        {isAuthority && (
+          <div className="card flex flex-col gap-3">
+            <h3 className="h3">Split controls</h3>
+            <div className="flex flex-wrap gap-2">
+              {canActivate && (
+                <button
+                  onClick={handleActivate}
+                  disabled={lifecycleLoading}
+                  className="btn-primary"
+                >
+                  Activate split
+                </button>
+              )}
+              {statusLabel === "active" && (
+                <button
+                  onClick={handlePause}
+                  disabled={lifecycleLoading}
+                  className="btn-secondary"
+                >
+                  Pause split
+                </button>
+              )}
+              {statusLabel === "paused" && account.totalBps === 10000 && (
+                <button
+                  onClick={handleResume}
+                  disabled={lifecycleLoading}
+                  className="btn-secondary"
+                >
+                  Resume split
+                </button>
+              )}
+              {statusLabel === "paused" && account.memberCount === 0 && (
+                <button
+                  onClick={handleCloseSplit}
+                  disabled={lifecycleLoading}
+                  className="btn-danger"
+                >
+                  Close split
+                </button>
+              )}
+              {statusLabel === "draft" &&
+                account.totalBps !== 10000 && (
+                  <p className="helper-text">
+                    Allocations must total 10,000 bps before this split can be
+                    activated.
+                  </p>
                 )}
-              </li>
-            );
-          })}
-        </ul>
-      </div>
+            </div>
+            {activateStatus && <p className="meta break-all">{activateStatus}</p>}
+          </div>
+        )}
 
-      {statusLabel === "draft" && (
-        <AddMemberForm splitConfig={splitConfig} onMemberAdded={load} />
-      )}
+        {/* members */}
+        <div className="card flex flex-col gap-3">
+          <h3 className="h3">Members</h3>
 
-      {statusLabel === "active" && (
-        <DepositForm
-          splitConfig={splitConfig}
-          tokenMint={account.tokenMint}
-          onDeposited={load}
-        />
-      )}
+          {members.length === 0 && (
+            <p className="meta">No members yet.</p>
+          )}
 
-      {(statusLabel === "active" || statusLabel === "paused") &&
-        publicKey &&
-        members.some((m) => m.account.member.equals(publicKey)) && (
+          <ul className="flex flex-col gap-2">
+            {members.map(({ publicKey: memberPda, account: m }) => {
+              const entitled = account.totalDeposited
+                .mul(new BN(m.shareBps))
+                .div(new BN(10000));
+              const claimable = entitled.sub(m.totalClaimed);
+              const canClose =
+                isAuthority && statusLabel === "paused" && claimable.isZero();
+              const memberAddr = m.member.toBase58();
+
+              return (
+                <li
+                  key={memberPda.toBase58()}
+                  className="flex items-center justify-between gap-2 py-1.5"
+                  style={{ borderBottom: "1px solid var(--border)" }}
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="mono text-sm">{shorten(memberAddr)}</span>
+                    <CopyButton text={memberAddr} />
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="meta">
+                      {(m.shareBps / 100).toFixed(2)}% · claimed:{" "}
+                      {m.totalClaimed.toString()}
+                    </span>
+                    {canClose && (
+                      <button
+                        onClick={() => handleCloseMember(m.member)}
+                        disabled={lifecycleLoading}
+                        className="btn-ghost text-xs"
+                        style={{ color: "var(--status-closed)" }}
+                      >
+                        Close
+                      </button>
+                    )}
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+
+          {statusLabel === "draft" && isAuthority && (
+            <AddMemberForm splitConfig={splitConfig} onMemberAdded={load} />
+          )}
+        </div>
+
+        {/* deposit */}
+        {statusLabel === "active" && (
+          <DepositForm
+            splitConfig={splitConfig}
+            tokenMint={account.tokenMint}
+            onDeposited={load}
+          />
+        )}
+
+        {/* claim */}
+        {(statusLabel === "active" || statusLabel === "paused") && isMember && (
           <ClaimForm
             splitConfig={splitConfig}
             tokenMint={account.tokenMint}
             onClaimed={load}
           />
         )}
+      </div>
     </div>
   );
 }

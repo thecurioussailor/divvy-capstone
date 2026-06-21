@@ -23,6 +23,7 @@ export default function DepositForm({
 
   const [amount, setAmount] = useState("");
   const [status, setStatus] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   async function handleDeposit() {
     if (!program || !publicKey || !signTransaction) {
@@ -31,7 +32,8 @@ export default function DepositForm({
     }
 
     try {
-      setStatus("Preparing token account...");
+      setLoading(true);
+      setStatus("Preparing token account…");
 
       const depositorTokenAccount = await ensureAssociatedTokenAccount(
         connection,
@@ -39,7 +41,7 @@ export default function DepositForm({
         tokenMint
       );
 
-      setStatus("Sending transaction...");
+      setStatus("Sending transaction…");
 
       const lamportAmount = new BN(amount);
 
@@ -53,36 +55,43 @@ export default function DepositForm({
         })
         .rpc();
 
-      setStatus(`Deposited! Tx: ${signature}`);
+      setStatus(`Deposited. Tx: ${signature}`);
       setAmount("");
       onDeposited?.();
     } catch (err) {
       console.error(err);
       setStatus(`Error: ${(err as Error).message}`);
+    } finally {
+      setLoading(false);
     }
   }
 
   return (
-    <div className="flex flex-col gap-3 w-full max-w-md border border-zinc-200 rounded p-4 bg-white">
-      <span className="text-sm font-medium">Deposit</span>
+    <div className="card flex flex-col gap-3">
+      <h3 className="h3">Deposit</h3>
 
-      <input
-        type="number"
-        value={amount}
-        onChange={(e) => setAmount(e.target.value)}
-        placeholder="Amount (smallest unit, e.g. 1000000 for 1 token at 6 decimals)"
-        className="border rounded px-3 py-2 text-sm"
-      />
+      <div className="flex flex-col gap-1.5">
+        <input
+          type="number"
+          value={amount}
+          onChange={(e) => setAmount(e.target.value)}
+          placeholder="Amount in smallest unit"
+          className="input-field"
+        />
+        <p className="helper-text">
+          Raw token units — e.g. 1000000 for 1 token at 6 decimals.
+        </p>
+      </div>
 
       <button
         onClick={handleDeposit}
-        disabled={!amount}
-        className="bg-black text-white rounded px-4 py-2 text-sm disabled:opacity-40"
+        disabled={!amount || loading}
+        className="btn-primary w-full"
       >
-        Deposit
+        {loading ? "Depositing…" : "Deposit"}
       </button>
 
-      {status && <p className="text-sm break-all">{status}</p>}
+      {status && <p className="meta break-all">{status}</p>}
     </div>
   );
 }

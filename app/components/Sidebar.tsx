@@ -1,9 +1,12 @@
 "use client";
 
 import { PublicKey } from "@solana/web3.js";
-import ProfileCard from "./ProfileCard";
 import SplitList from "./SplitList";
 import FindSplitBox from "./FindSplitBox";
+
+function Divider() {
+  return <div className="h-px" style={{ background: "var(--border)" }} />;
+}
 
 export default function Sidebar({
   selected,
@@ -17,17 +20,19 @@ export default function Sidebar({
   refreshKey: number;
 }) {
   return (
-    <aside className="flex flex-col gap-6 w-72 border-r border-zinc-200 bg-white p-4 overflow-y-auto">
-      <ProfileCard />
-
-      <button
-        onClick={onNewSplit}
-        className="text-sm border border-zinc-300 rounded px-3 py-2 hover:bg-zinc-50"
-      >
+    <aside
+      className="flex flex-col gap-6 w-[300px] shrink-0 border-r p-6 overflow-y-auto"
+      style={{ borderColor: "var(--border)" }}
+    >
+      <button onClick={onNewSplit} className="btn-primary w-full">
         + New Split
       </button>
 
+      <Divider />
+
       <FindSplitBox onFound={onSelect} />
+
+      <Divider />
 
       <SplitList
         selected={selected}

@@ -22,23 +22,23 @@ export default function FindSplitBox({
   }
 
   return (
-    <div className="flex flex-col gap-2 border border-zinc-200 rounded p-3 bg-white">
-      <span className="text-sm font-medium">Find a Split</span>
+    <div className="flex flex-col gap-2">
+      <span className="label">Find a split</span>
       <input
         type="text"
         value={address}
         onChange={(e) => setAddress(e.target.value)}
         placeholder="Paste split address"
-        className="border rounded px-3 py-2 text-sm"
+        className="input-field mono"
       />
       <button
         onClick={handleFind}
         disabled={!address}
-        className="bg-zinc-900 text-white rounded px-3 py-2 text-sm disabled:opacity-40"
+        className="btn-secondary w-full"
       >
         Open
       </button>
-      {error && <p className="text-xs text-red-600">{error}</p>}
+      {error && <p className="helper-text" style={{ color: "var(--status-closed)" }}>{error}</p>}
     </div>
   );
 }

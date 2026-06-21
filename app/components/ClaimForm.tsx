@@ -21,6 +21,7 @@ export default function ClaimForm({
   const { connection } = useConnection();
 
   const [status, setStatus] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   async function handleClaim() {
     if (!program || !publicKey || !signTransaction) {
@@ -29,7 +30,8 @@ export default function ClaimForm({
     }
 
     try {
-      setStatus("Preparing token account...");
+      setLoading(true);
+      setStatus("Preparing token account…");
 
       const memberTokenAccount = await ensureAssociatedTokenAccount(
         connection,
@@ -37,7 +39,7 @@ export default function ClaimForm({
         tokenMint
       );
 
-      setStatus("Sending transaction...");
+      setStatus("Sending transaction…");
 
       const memberAllocation = getMemberAllocationPda(splitConfig, publicKey);
 
@@ -53,26 +55,30 @@ export default function ClaimForm({
         })
         .rpc();
 
-      setStatus(`Claimed! Tx: ${signature}`);
+      setStatus(`Claimed. Tx: ${signature}`);
       onClaimed?.();
     } catch (err) {
       console.error(err);
       setStatus(`Error: ${(err as Error).message}`);
+    } finally {
+      setLoading(false);
     }
   }
 
   return (
-    <div className="flex flex-col gap-3 w-full max-w-md border border-zinc-200 rounded p-4 bg-white">
-      <span className="text-sm font-medium">Claim Your Share</span>
+    <div className="card flex flex-col gap-3">
+      <h3 className="h3">Your claim</h3>
+      <p className="meta">Withdraw your accrued share to your wallet.</p>
 
       <button
         onClick={handleClaim}
-        className="bg-black text-white rounded px-4 py-2 text-sm"
+        disabled={loading}
+        className="btn-primary w-full"
       >
-        Claim
+        {loading ? "Claiming…" : "Claim"}
       </button>
 
-      {status && <p className="text-sm break-all">{status}</p>}
+      {status && <p className="meta break-all">{status}</p>}
     </div>
   );
 }

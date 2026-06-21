@@ -1,52 +1,49 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect } from "react";
+import dynamic from "next/dynamic";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { useWallet } from "@solana/wallet-adapter-react";
-import { PublicKey } from "@solana/web3.js";
-import Navbar from "../components/Navbar";
-import Sidebar from "../components/Sidebar";
-import CreateSplitForm from "../components/CreateSplitForm";
-import SplitDetails from "../components/SplitDetails";
 
-export default function Home() {
+const WalletMultiButton = dynamic(
+  () =>
+    import("@solana/wallet-adapter-react-ui").then(
+      (mod) => mod.WalletMultiButton
+    ),
+  { ssr: false }
+);
+
+export default function Landing() {
   const { publicKey } = useWallet();
+  const router = useRouter();
 
-  const [selectedSplit, setSelectedSplit] = useState<PublicKey | null>(null);
-  const [refreshKey, setRefreshKey] = useState(0);
+  useEffect(() => {
+    if (publicKey) {
+      router.replace("/dashboard");
+    }
+  }, [publicKey, router]);
 
   return (
-    <div className="flex flex-col flex-1 h-screen">
-      <Navbar />
+    <div
+      className="flex flex-1 flex-col items-center justify-center gap-6 px-8 text-center"
+      style={{ background: "var(--bg)" }}
+    >
+      <Image
+        src="/divvylogo.png"
+        alt="Divvy"
+        width={200}
+        height={60}
+        priority
+        style={{ height: "56px", width: "auto" }}
+      />
 
-      <div className="flex flex-1 overflow-hidden">
-        {publicKey ? (
-          <>
-            <Sidebar
-              selected={selectedSplit}
-              onSelect={setSelectedSplit}
-              onNewSplit={() => setSelectedSplit(null)}
-              refreshKey={refreshKey}
-            />
+      <p className="max-w-md" style={{ color: "var(--text-muted)" }}>
+        Pool funds in a shared vault and let each member claim their fixed
+        share, on-chain, on their own schedule.
+      </p>
 
-            <main className="flex-1 overflow-y-auto p-8 bg-zinc-50">
-              {selectedSplit ? (
-                <SplitDetails splitConfig={selectedSplit} />
-              ) : (
-                <CreateSplitForm
-                  onCreated={(splitConfig) => {
-                    setSelectedSplit(splitConfig);
-                    setRefreshKey((k) => k + 1);
-                  }}
-                />
-              )}
-            </main>
-          </>
-        ) : (
-          <main className="flex flex-1 items-center justify-center">
-            <p className="text-zinc-500">Connect your wallet to get started.</p>
-          </main>
-        )}
-      </div>
+      <WalletMultiButton />
     </div>
   );
 }

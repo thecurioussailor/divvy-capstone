@@ -5,6 +5,7 @@ import { useWallet } from "@solana/wallet-adapter-react";
 import { PublicKey } from "@solana/web3.js";
 import { useProgram } from "../lib/useProgram";
 import { getSplitsForAuthority } from "../lib/program";
+import StatusBadge from "./StatusBadge";
 import BN from "bn.js";
 
 type SplitAccount = {
@@ -53,40 +54,71 @@ export default function SplitList({
   if (!publicKey) return null;
 
   return (
-    <div className="flex flex-col gap-2 w-full max-w-md">
+    <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between">
-        <span className="text-sm font-medium">Your Splits</span>
-        <button onClick={loadSplits} className="text-xs underline">
+        <span className="label">Your splits</span>
+        <button onClick={loadSplits} className="btn-ghost text-xs">
           Refresh
         </button>
       </div>
 
-      {loading && <p className="text-sm text-zinc-500">Loading...</p>}
-
-      {!loading && splits.length === 0 && (
-        <p className="text-sm text-zinc-500">No splits yet.</p>
+      {loading && (
+        <div className="flex flex-col gap-2">
+          {[0, 1].map((i) => (
+            <div
+              key={i}
+              className="h-14 rounded-xl animate-pulse"
+              style={{ background: "var(--surface-2)" }}
+            />
+          ))}
+        </div>
       )}
 
-      {splits.map(({ publicKey: pda, account }) => {
-        const statusLabel = Object.keys(account.status)[0];
-        const isSelected = selected?.equals(pda);
+      {!loading && splits.length === 0 && (
+        <div className="py-2">
+          <p className="meta">No splits yet.</p>
+          <p className="helper-text">
+            Create one above, or open one someone shared with you.
+          </p>
+        </div>
+      )}
 
-        return (
-          <button
-            key={pda.toBase58()}
-            onClick={() => onSelect(pda)}
-            className={`text-left border rounded px-3 py-2 text-sm ${
-              isSelected ? "border-black dark:border-white" : "border-zinc-300"
-            }`}
-          >
-            <div className="font-mono text-xs break-all">{pda.toBase58()}</div>
-            <div className="text-zinc-500">
-              status: {statusLabel} · members: {account.memberCount} · bps:{" "}
-              {account.totalBps}
-            </div>
-          </button>
-        );
-      })}
+      <div className="flex flex-col gap-1">
+        {splits.map(({ publicKey: pda, account }) => {
+          const statusLabel = Object.keys(account.status)[0];
+          const isSelected = selected?.equals(pda);
+          const addr = pda.toBase58();
+          const short = `${addr.slice(0, 4)}…${addr.slice(-4)}`;
+
+          return (
+            <button
+              key={addr}
+              onClick={() => onSelect(pda)}
+              className="text-left rounded-xl px-3 py-2.5 transition-colors cursor-pointer"
+              style={{
+                background: isSelected ? "var(--accent-soft)" : "transparent",
+                borderLeft: isSelected
+                  ? "2px solid var(--accent)"
+                  : "2px solid transparent",
+              }}
+              onMouseEnter={(e) => {
+                if (!isSelected) e.currentTarget.style.background = "var(--surface-2)";
+              }}
+              onMouseLeave={(e) => {
+                if (!isSelected) e.currentTarget.style.background = "transparent";
+              }}
+            >
+              <div className="flex items-center gap-2">
+                <span className="mono text-sm">{short}</span>
+                <StatusBadge status={statusLabel} />
+              </div>
+              <div className="meta mt-0.5">
+                members: {account.memberCount} · bps: {account.totalBps}
+              </div>
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }
