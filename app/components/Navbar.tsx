@@ -29,7 +29,7 @@ export default function Navbar({
           width={140}
           height={60}
           priority
-          style={{ height: "80px", width: "auto" }}
+          style={{ height: "50px", width: "auto" }}
         />
       </div>
       {showConnectButton ? <WalletMultiButton /> : <WalletMenu />}
