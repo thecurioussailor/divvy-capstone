@@ -73,4 +73,4 @@ pnpm install
 pnpm dev
 ```
 
-> Screenshot(s) of the frontend in action go here.
+![Dashboard](dashboard.png)
