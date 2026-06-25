@@ -4,6 +4,7 @@ import { useState } from "react";
 import { PublicKey } from "@solana/web3.js";
 import { useProgram } from "../lib/useProgram";
 import { getMemberAllocationPda } from "../lib/program";
+import TxLink from "./TxLink";
 
 export default function AddMemberForm({
   splitConfig,
@@ -17,6 +18,7 @@ export default function AddMemberForm({
   const [memberAddress, setMemberAddress] = useState("");
   const [shareBps, setShareBps] = useState("");
   const [status, setStatus] = useState<string | null>(null);
+  const [signature, setSignature] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   const canSubmit = !!memberAddress && !!shareBps && !loading;
@@ -30,12 +32,13 @@ export default function AddMemberForm({
     try {
       setLoading(true);
       setStatus("Sending transaction…");
+      setSignature(null);
 
       const member = new PublicKey(memberAddress);
       const bps = parseInt(shareBps, 10);
       const memberAllocation = getMemberAllocationPda(splitConfig, member);
 
-      const signature = await program.methods
+      const sig = await program.methods
         .addMember(member, bps)
         .accountsPartial({
           splitConfig,
@@ -43,7 +46,8 @@ export default function AddMemberForm({
         })
         .rpc();
 
-      setStatus(`Member added. Tx: ${signature}`);
+      setStatus("Member added.");
+      setSignature(sig);
       setMemberAddress("");
       setShareBps("");
       onMemberAdded?.();
@@ -86,7 +90,12 @@ export default function AddMemberForm({
         {loading ? "Adding…" : "Add member"}
       </button>
 
-      {status && <p className="meta break-all">{status}</p>}
+      {status && (
+        <div className="flex items-center gap-2">
+          <p className="meta break-all">{status}</p>
+          {signature && <TxLink signature={signature} />}
+        </div>
+      )}
     </div>
   );
 }

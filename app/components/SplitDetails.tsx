@@ -13,6 +13,7 @@ import {
 } from "../lib/program";
 import StatusBadge from "./StatusBadge";
 import CopyButton from "./CopyButton";
+import TxLink from "./TxLink";
 import AddMemberForm from "./AddMemberForm";
 import DepositForm from "./DepositForm";
 import ClaimForm from "./ClaimForm";
@@ -52,6 +53,7 @@ export default function SplitDetails({
   const [account, setAccount] = useState<SplitConfigAccount | null>(null);
   const [members, setMembers] = useState<MemberAllocationAccount[]>([]);
   const [activateStatus, setActivateStatus] = useState<string | null>(null);
+  const [lifecycleSignature, setLifecycleSignature] = useState<string | null>(null);
   const [lifecycleLoading, setLifecycleLoading] = useState(false);
 
   const load = useCallback(async () => {
@@ -72,11 +74,13 @@ export default function SplitDetails({
     try {
       setLifecycleLoading(true);
       setActivateStatus("Activating…");
-      const signature = await program.methods
+      setLifecycleSignature(null);
+      const sig = await program.methods
         .activateSplit()
         .accountsPartial({ splitConfig })
         .rpc();
-      setActivateStatus(`Activated. Tx: ${signature}`);
+      setActivateStatus("Activated.");
+      setLifecycleSignature(sig);
       await load();
     } catch (err) {
       console.error(err);
@@ -91,11 +95,13 @@ export default function SplitDetails({
     try {
       setLifecycleLoading(true);
       setActivateStatus("Pausing…");
-      const signature = await program.methods
+      setLifecycleSignature(null);
+      const sig = await program.methods
         .pauseSplit()
         .accountsPartial({ splitConfig })
         .rpc();
-      setActivateStatus(`Paused. Tx: ${signature}`);
+      setActivateStatus("Paused.");
+      setLifecycleSignature(sig);
       await load();
     } catch (err) {
       console.error(err);
@@ -110,11 +116,13 @@ export default function SplitDetails({
     try {
       setLifecycleLoading(true);
       setActivateStatus("Resuming…");
-      const signature = await program.methods
+      setLifecycleSignature(null);
+      const sig = await program.methods
         .resumeSplit()
         .accountsPartial({ splitConfig })
         .rpc();
-      setActivateStatus(`Resumed. Tx: ${signature}`);
+      setActivateStatus("Resumed.");
+      setLifecycleSignature(sig);
       await load();
     } catch (err) {
       console.error(err);
@@ -129,12 +137,14 @@ export default function SplitDetails({
     try {
       setLifecycleLoading(true);
       setActivateStatus("Closing member…");
+      setLifecycleSignature(null);
       const memberAllocation = getMemberAllocationPda(splitConfig, member);
-      const signature = await program.methods
+      const sig = await program.methods
         .closeMember(member)
         .accountsPartial({ splitConfig, memberAllocation })
         .rpc();
-      setActivateStatus(`Member closed. Tx: ${signature}`);
+      setActivateStatus("Member closed.");
+      setLifecycleSignature(sig);
       await load();
     } catch (err) {
       console.error(err);
@@ -149,6 +159,7 @@ export default function SplitDetails({
     try {
       setLifecycleLoading(true);
       setActivateStatus("Closing split…");
+      setLifecycleSignature(null);
 
       const authorityTokenAccount = await ensureAssociatedTokenAccount(
         connection,
@@ -156,7 +167,7 @@ export default function SplitDetails({
         account.tokenMint
       );
 
-      const signature = await program.methods
+      const sig = await program.methods
         .closeSplit()
         .accountsPartial({
           splitConfig,
@@ -166,7 +177,8 @@ export default function SplitDetails({
         })
         .rpc();
 
-      setActivateStatus(`Split closed. Tx: ${signature}`);
+      setActivateStatus("Split closed.");
+      setLifecycleSignature(sig);
     } catch (err) {
       console.error(err);
       setActivateStatus(`Error: ${(err as Error).message}`);
@@ -262,7 +274,12 @@ export default function SplitDetails({
                   </p>
                 )}
             </div>
-            {activateStatus && <p className="meta break-all">{activateStatus}</p>}
+            {activateStatus && (
+              <div className="flex items-center gap-2">
+                <p className="meta break-all">{activateStatus}</p>
+                {lifecycleSignature && <TxLink signature={lifecycleSignature} />}
+              </div>
+            )}
           </div>
         )}
 

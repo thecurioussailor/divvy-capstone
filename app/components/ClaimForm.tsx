@@ -6,6 +6,7 @@ import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import { useWallet, useConnection } from "@solana/wallet-adapter-react";
 import { useProgram } from "../lib/useProgram";
 import { getMemberAllocationPda, ensureAssociatedTokenAccount } from "../lib/program";
+import TxLink from "./TxLink";
 
 export default function ClaimForm({
   splitConfig,
@@ -21,6 +22,7 @@ export default function ClaimForm({
   const { connection } = useConnection();
 
   const [status, setStatus] = useState<string | null>(null);
+  const [signature, setSignature] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   async function handleClaim() {
@@ -32,6 +34,7 @@ export default function ClaimForm({
     try {
       setLoading(true);
       setStatus("Preparing token account…");
+      setSignature(null);
 
       const memberTokenAccount = await ensureAssociatedTokenAccount(
         connection,
@@ -43,7 +46,7 @@ export default function ClaimForm({
 
       const memberAllocation = getMemberAllocationPda(splitConfig, publicKey);
 
-      const signature = await program.methods
+      const sig = await program.methods
         .claim()
         .accountsPartial({
           member: publicKey,
@@ -55,7 +58,8 @@ export default function ClaimForm({
         })
         .rpc();
 
-      setStatus(`Claimed. Tx: ${signature}`);
+      setStatus("Claimed.");
+      setSignature(sig);
       onClaimed?.();
     } catch (err) {
       console.error(err);
@@ -78,7 +82,12 @@ export default function ClaimForm({
         {loading ? "Claiming…" : "Claim"}
       </button>
 
-      {status && <p className="meta break-all">{status}</p>}
+      {status && (
+        <div className="flex items-center gap-2">
+          <p className="meta break-all">{status}</p>
+          {signature && <TxLink signature={signature} />}
+        </div>
+      )}
     </div>
   );
 }

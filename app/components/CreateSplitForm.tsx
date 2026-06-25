@@ -6,6 +6,7 @@ import { PublicKey } from "@solana/web3.js";
 import BN from "bn.js";
 import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import { useProgram } from "../lib/useProgram";
+import TxLink from "./TxLink";
 
 export default function CreateSplitForm({
   onCreated,
@@ -17,6 +18,7 @@ export default function CreateSplitForm({
 
   const [tokenMint, setTokenMint] = useState("");
   const [status, setStatus] = useState<string | null>(null);
+  const [signature, setSignature] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   const canSubmit = !!publicKey && !!tokenMint && !loading;
@@ -30,11 +32,12 @@ export default function CreateSplitForm({
     try {
       setLoading(true);
       setStatus("Sending transaction…");
+      setSignature(null);
 
       const splitId = new BN(Date.now());
       const mint = new PublicKey(tokenMint);
 
-      const signature = await program.methods
+      const sig = await program.methods
         .initializeSplit(splitId)
         .accountsPartial({
           tokenMint: mint,
@@ -43,7 +46,8 @@ export default function CreateSplitForm({
         .rpc();
 
       const splitConfig = getSplitConfigPda(publicKey, splitId);
-      setStatus(`Split created. Tx: ${signature}`);
+      setStatus("Split created.");
+      setSignature(sig);
       onCreated?.(splitConfig);
     } catch (err) {
       console.error(err);
@@ -92,7 +96,12 @@ export default function CreateSplitForm({
           )}
         </div>
 
-        {status && <p className="meta break-all">{status}</p>}
+        {status && (
+          <div className="flex items-center gap-2">
+            <p className="meta break-all">{status}</p>
+            {signature && <TxLink signature={signature} />}
+          </div>
+        )}
       </div>
     </div>
   );

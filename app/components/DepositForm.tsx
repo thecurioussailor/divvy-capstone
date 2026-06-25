@@ -7,6 +7,7 @@ import { useWallet, useConnection } from "@solana/wallet-adapter-react";
 import BN from "bn.js";
 import { useProgram } from "../lib/useProgram";
 import { ensureAssociatedTokenAccount } from "../lib/program";
+import TxLink from "./TxLink";
 
 export default function DepositForm({
   splitConfig,
@@ -23,6 +24,7 @@ export default function DepositForm({
 
   const [amount, setAmount] = useState("");
   const [status, setStatus] = useState<string | null>(null);
+  const [signature, setSignature] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   async function handleDeposit() {
@@ -34,6 +36,7 @@ export default function DepositForm({
     try {
       setLoading(true);
       setStatus("Preparing token account…");
+      setSignature(null);
 
       const depositorTokenAccount = await ensureAssociatedTokenAccount(
         connection,
@@ -45,7 +48,7 @@ export default function DepositForm({
 
       const lamportAmount = new BN(amount);
 
-      const signature = await program.methods
+      const sig = await program.methods
         .deposit(lamportAmount)
         .accountsPartial({
           splitConfig,
@@ -55,7 +58,8 @@ export default function DepositForm({
         })
         .rpc();
 
-      setStatus(`Deposited. Tx: ${signature}`);
+      setStatus("Deposited.");
+      setSignature(sig);
       setAmount("");
       onDeposited?.();
     } catch (err) {
@@ -91,7 +95,12 @@ export default function DepositForm({
         {loading ? "Depositing…" : "Deposit"}
       </button>
 
-      {status && <p className="meta break-all">{status}</p>}
+      {status && (
+        <div className="flex items-center gap-2">
+          <p className="meta break-all">{status}</p>
+          {signature && <TxLink signature={signature} />}
+        </div>
+      )}
     </div>
   );
 }
